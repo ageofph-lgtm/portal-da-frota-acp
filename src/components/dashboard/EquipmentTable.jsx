@@ -151,7 +151,7 @@ export default function EquipmentTable({ equipment }) {
                           placeholder="Observação..."
                         />
                       ) : (
-                        eq.action || <span className="text-slate-300 italic">—</span>
+                        eq.action || <span className="text-slate-300 dark:text-slate-600 italic">—</span>
                       )}
                     </td>
                     <td className="px-6 py-4">
