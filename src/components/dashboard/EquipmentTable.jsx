@@ -139,7 +139,7 @@ export default function EquipmentTable({ equipment }) {
                     <td className="px-6 py-4 whitespace-nowrap font-semibold text-slate-800 dark:text-slate-100 group-hover:text-[#F08100] transition">
                       {eq.equipment}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-slate-500">
+                    <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-slate-500 dark:text-slate-400">
                       {eq.serial_number}
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-700">
