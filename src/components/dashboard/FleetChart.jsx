@@ -86,7 +86,7 @@ export default function FleetChart({ equipment }) {
               layout="vertical"
               iconType="circle"
               iconSize={10}
-              formatter={(value) => <span className="text-sm text-slate-600 font-medium">{value}</span>}
+              formatter={(value) => <span className="text-sm text-slate-600 dark:text-slate-300 font-medium">{value}</span>}
             />
           </PieChart>
         </ResponsiveContainer>
