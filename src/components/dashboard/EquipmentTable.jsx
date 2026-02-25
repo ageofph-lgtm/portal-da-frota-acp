@@ -157,10 +157,10 @@ export default function EquipmentTable({ equipment }) {
                     <td className="px-6 py-4">
                       {editingId === eq.id ? (
                         <div className="flex gap-1">
-                          <Button size="icon" variant="ghost" className="h-8 w-8 text-emerald-600 hover:bg-emerald-50" onClick={() => saveEdit(eq.id)}>
-                            <Check className="w-4 h-4" />
-                          </Button>
-                          <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:bg-slate-100" onClick={() => setEditingId(null)}>
+                          <Button size="icon" variant="ghost" className="h-8 w-8 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30" onClick={() => saveEdit(eq.id)}>
+                             <Check className="w-4 h-4" />
+                           </Button>
+                           <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700" onClick={() => setEditingId(null)}>
                             <X className="w-4 h-4" />
                           </Button>
                         </div>
