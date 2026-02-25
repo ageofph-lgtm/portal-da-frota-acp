@@ -18,40 +18,103 @@ const GROUP_OPTIONS = [
   { value: "serial_number", label: "Nº Série" },
 ];
 
-function GroupSection({ groupKey, items, onDelete }) {
+function EquipmentRow({ eq, onDelete, onSave }) {
+  const [editing, setEditing] = useState(false);
+  const [editData, setEditData] = useState({});
+
+  const startEdit = () => {
+    setEditData({ equipment: eq.equipment, serial_number: eq.serial_number, status: eq.status, action: eq.action || "" });
+    setEditing(true);
+  };
+
+  const save = () => {
+    onSave(eq.id, editData);
+    setEditing(false);
+  };
+
+  return (
+    <div className={`flex items-center justify-between px-5 py-3 transition group ${editing ? "bg-orange-50/40 dark:bg-orange-900/10" : "hover:bg-slate-50/80 dark:hover:bg-slate-700/30"}`}>
+      {editing ? (
+        <div className="flex flex-wrap gap-2 flex-1 mr-2">
+          <Input
+            value={editData.equipment}
+            onChange={(e) => setEditData({ ...editData, equipment: e.target.value })}
+            className="h-8 text-sm w-32 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
+            placeholder="Modelo"
+          />
+          <Input
+            value={editData.serial_number}
+            onChange={(e) => setEditData({ ...editData, serial_number: e.target.value })}
+            className="h-8 text-sm w-40 font-mono dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
+            placeholder="Nº Série"
+          />
+          <Select value={editData.status} onValueChange={(v) => setEditData({ ...editData, status: v })}>
+            <SelectTrigger className="h-8 text-xs w-44 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Input
+            value={editData.action}
+            onChange={(e) => setEditData({ ...editData, action: e.target.value })}
+            className="h-8 text-sm flex-1 min-w-[120px] dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
+            placeholder="Observação..."
+          />
+        </div>
+      ) : (
+        <div className="flex items-center gap-3 flex-wrap flex-1">
+          <StatusBadge status={eq.status} />
+          <span className="font-semibold text-slate-800 dark:text-slate-100 text-sm">{eq.equipment}</span>
+          <span className="font-mono text-xs text-slate-400">{eq.serial_number}</span>
+          {eq.action && <span className="text-xs text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">{eq.action}</span>}
+        </div>
+      )}
+      <div className="flex gap-1 shrink-0">
+        {editing ? (
+          <>
+            <Button size="icon" variant="ghost" className="h-8 w-8 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30" onClick={save}>
+              <Check className="w-4 h-4" />
+            </Button>
+            <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700" onClick={() => setEditing(false)}>
+              <X className="w-4 h-4" />
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-300 hover:text-[#F08100] hover:bg-orange-50 dark:hover:bg-orange-900/20 opacity-0 group-hover:opacity-100 transition" onClick={startEdit}>
+              <Pencil className="w-4 h-4" />
+            </Button>
+            <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-300 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition" onClick={() => onDelete(eq.id)}>
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function GroupSection({ groupKey, items, onDelete, onSave }) {
   const [open, setOpen] = useState(true);
   return (
-    <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-5 py-3 bg-slate-50 hover:bg-slate-100 transition"
+        className="w-full flex items-center justify-between px-5 py-3 bg-slate-50 dark:bg-slate-900/30 hover:bg-slate-100 dark:hover:bg-slate-700/40 transition"
       >
         <div className="flex items-center gap-3">
           {open ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
-          <span className="font-semibold text-slate-700">{groupKey}</span>
-          <span className="text-xs text-slate-400 bg-slate-200 rounded-full px-2 py-0.5">{items.length}</span>
+          <span className="font-semibold text-slate-700 dark:text-slate-200">{groupKey}</span>
+          <span className="text-xs text-slate-400 bg-slate-200 dark:bg-slate-700 rounded-full px-2 py-0.5">{items.length}</span>
         </div>
         {groupKey && <StatusBadge status={groupKey} />}
       </button>
       {open && (
-        <div className="divide-y divide-slate-50">
+        <div className="divide-y divide-slate-50 dark:divide-slate-700">
           {items.map((eq) => (
-            <div key={eq.id} className="flex items-center justify-between px-5 py-3 hover:bg-slate-50/80 transition group">
-              <div className="flex items-center gap-3 flex-wrap">
-                <StatusBadge status={eq.status} />
-                <span className="font-semibold text-slate-800 text-sm">{eq.equipment}</span>
-                <span className="font-mono text-xs text-slate-400">{eq.serial_number}</span>
-                {eq.action && <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">{eq.action}</span>}
-              </div>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="text-slate-300 hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition"
-                onClick={() => onDelete(eq.id)}
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
+            <EquipmentRow key={eq.id} eq={eq} onDelete={onDelete} onSave={onSave} />
           ))}
         </div>
       )}
