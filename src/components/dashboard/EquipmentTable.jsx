@@ -107,8 +107,8 @@ export default function EquipmentTable({ equipment }) {
             <AnimatePresence>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-16 text-slate-400">
-                    <Search className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                  <td colSpan={5} className="text-center py-16 text-slate-400 dark:text-slate-500">
+                    <Search className="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-slate-600" />
                     <p className="font-medium">Nenhum registo encontrado</p>
                   </td>
                 </tr>
