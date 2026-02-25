@@ -9,8 +9,25 @@ export default function Layout({ children, currentPageName }) {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Navbar */}
-      <nav className="bg-[#1A1A1A] shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav className="shadow-lg overflow-hidden relative" style={{
+        background: "linear-gradient(to right, #b0b8c1 0%, #b0b8c1 calc(50% - 20px), #1A1A1A calc(50% + 20px), #1A1A1A 100%)"
+      }}>
+        {/* Diagonal white divider line */}
+        <div style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          pointerEvents: "none",
+          zIndex: 1,
+          overflow: "hidden",
+        }}>
+          <svg width="100%" height="100%" preserveAspectRatio="none" style={{ position: "absolute", top: 0, left: 0 }}>
+            <line x1="calc(50% - 22px)" y1="100%" x2="calc(50% + 22px)" y2="0%" stroke="white" strokeWidth="2" />
+          </svg>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative" style={{ zIndex: 2 }}>
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center gap-4">
               <img 
