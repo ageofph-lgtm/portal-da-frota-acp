@@ -10,7 +10,7 @@ export default function Layout({ children, currentPageName }) {
     <div className="min-h-screen bg-slate-50">
       {/* Navbar */}
       <nav className="shadow-lg overflow-hidden relative" style={{
-        background: "linear-gradient(to right, #b0b8c1 0%, #b0b8c1 calc(50% - 20px), #1A1A1A calc(50% + 20px), #1A1A1A 100%)"
+        background: "linear-gradient(to right, #ffffff 0%, #ffffff calc(50% - 20px), #1A1A1A calc(50% + 20px), #1A1A1A 100%)"
       }}>
         {/* Diagonal white divider line */}
         <div style={{
