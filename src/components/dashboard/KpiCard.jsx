@@ -3,13 +3,13 @@ import { motion } from "framer-motion";
 
 export default function KpiCard({ title, value, percentage, icon: Icon, color, delay = 0 }) {
   const colorMap = {
-    slate:   { bg: "bg-slate-50",    text: "text-slate-700",   icon: "bg-slate-100 text-slate-600",    pct: "text-slate-400" },
-    emerald: { bg: "bg-emerald-50",  text: "text-emerald-700", icon: "bg-emerald-100 text-emerald-600", pct: "text-emerald-500" },
-    red:     { bg: "bg-red-50",      text: "text-red-700",     icon: "bg-red-100 text-red-600",         pct: "text-red-500" },
-    amber:   { bg: "bg-amber-50",    text: "text-amber-700",   icon: "bg-amber-100 text-amber-600",     pct: "text-amber-500" },
-    blue:    { bg: "bg-blue-50",     text: "text-blue-700",    icon: "bg-blue-100 text-blue-600",       pct: "text-blue-500" },
-    teal:    { bg: "bg-teal-50",     text: "text-teal-700",    icon: "bg-teal-100 text-teal-600",       pct: "text-teal-500" },
-    purple:  { bg: "bg-purple-50",   text: "text-purple-700",  icon: "bg-purple-100 text-purple-600",   pct: "text-purple-500" },
+    slate:   { text: "text-slate-700 dark:text-slate-300",   icon: "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300",    pct: "text-slate-400 dark:text-slate-500" },
+    emerald: { text: "text-emerald-700 dark:text-emerald-400", icon: "bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400", pct: "text-emerald-500 dark:text-emerald-400" },
+    red:     { text: "text-red-700 dark:text-red-400",     icon: "bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400",         pct: "text-red-500 dark:text-red-400" },
+    amber:   { text: "text-amber-700 dark:text-amber-400",   icon: "bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400",     pct: "text-amber-500 dark:text-amber-400" },
+    blue:    { text: "text-blue-700 dark:text-blue-400",    icon: "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400",       pct: "text-blue-500 dark:text-blue-400" },
+    teal:    { text: "text-teal-700 dark:text-teal-400",    icon: "bg-teal-100 dark:bg-teal-900/50 text-teal-600 dark:text-teal-400",       pct: "text-teal-500 dark:text-teal-400" },
+    purple:  { text: "text-purple-700 dark:text-purple-400",  icon: "bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400",   pct: "text-purple-500 dark:text-purple-400" },
   };
 
   const c = colorMap[color] || colorMap.slate;
