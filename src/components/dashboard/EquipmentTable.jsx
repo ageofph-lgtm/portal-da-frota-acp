@@ -118,7 +118,7 @@ export default function EquipmentTable({ equipment }) {
                     key={eq.id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="hover:bg-slate-50/80 transition group"
+                    className="hover:bg-slate-50/80 dark:hover:bg-slate-700/50 transition group"
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       {editingId === eq.id ? (
