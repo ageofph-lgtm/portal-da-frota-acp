@@ -56,9 +56,9 @@ export default function FleetChart({ equipment }) {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5 }}
-      className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100"
+      className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700"
     >
-      <h3 className="text-lg font-semibold text-slate-800 text-center mb-2">Estado da Frota</h3>
+      <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 text-center mb-2">Estado da Frota</h3>
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
