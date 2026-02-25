@@ -57,7 +57,7 @@ export default function EquipmentTable({ equipment }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.3 }}
-      className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden"
+      className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden"
     >
       {/* Header */}
       <div className="p-5 border-b border-slate-100 bg-slate-50/50">
