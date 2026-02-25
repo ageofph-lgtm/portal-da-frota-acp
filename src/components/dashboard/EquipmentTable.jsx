@@ -103,7 +103,7 @@ export default function EquipmentTable({ equipment }) {
               <th className="px-6 py-4 font-semibold w-20">Editar</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
             <AnimatePresence>
               {filtered.length === 0 ? (
                 <tr>
