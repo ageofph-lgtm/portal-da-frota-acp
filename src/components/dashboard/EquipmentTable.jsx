@@ -73,11 +73,11 @@ export default function EquipmentTable({ equipment }) {
                 placeholder="Pesquisar série, modelo..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 w-full sm:w-64 border-slate-200 focus-visible:ring-[#F08100]"
+                className="pl-10 w-full sm:w-64 border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 focus-visible:ring-[#F08100]"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-48 border-slate-200 focus:ring-[#F08100]">
+              <SelectTrigger className="w-full sm:w-48 border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 focus:ring-[#F08100]">
                 <SelectValue placeholder="Todos os Estados" />
               </SelectTrigger>
               <SelectContent>
