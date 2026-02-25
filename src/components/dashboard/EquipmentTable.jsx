@@ -179,7 +179,7 @@ export default function EquipmentTable({ equipment }) {
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-slate-100 flex justify-between items-center text-sm text-slate-500 bg-slate-50/50">
+      <div className="p-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center text-sm text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900/30">
         <span>Mostrando {filtered.length} de {equipment.length} registos</span>
         <button onClick={resetFilters} className="text-[#F08100] hover:text-orange-700 font-medium transition flex items-center gap-1">
           <RotateCcw className="w-3.5 h-3.5" />
