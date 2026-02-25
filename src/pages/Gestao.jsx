@@ -160,6 +160,13 @@ export default function Gestao() {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Equipment.update(id, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["equipment"] }),
+  });
+
+  const handleSave = (id, data) => updateMutation.mutate({ id, data });
+
   // Group logic
   const grouped = useMemo(() => {
     const STATUS_ORDER = ["Pronta", "Em progresso", "A começar", "Aguarda material", "Avaliar", "UTS"];
