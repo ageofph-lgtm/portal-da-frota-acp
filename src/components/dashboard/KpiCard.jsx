@@ -19,11 +19,11 @@ export default function KpiCard({ title, value, percentage, icon: Icon, color, d
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay }}
-      className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-shadow"
+      className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-shadow"
     >
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-slate-500 mb-1">{title}</p>
+          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">{title}</p>
           <div className="flex items-baseline gap-2">
             <span className={`text-3xl font-bold ${c.text}`}>{value}</span>
             <span className={`text-sm font-semibold ${c.pct}`}>({percentage})</span>
