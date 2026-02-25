@@ -60,9 +60,9 @@ export default function EquipmentTable({ equipment }) {
       className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden"
     >
       {/* Header */}
-      <div className="p-5 border-b border-slate-100 bg-slate-50/50">
+      <div className="p-5 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
             <Filter className="w-5 h-5 text-[#F08100]" />
             Registo de Equipamentos
           </h3>
