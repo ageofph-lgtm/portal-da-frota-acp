@@ -260,6 +260,7 @@ export default function Gestao() {
               groupKey={key}
               items={items}
               onDelete={(id) => setDeleteId(id)}
+              onSave={handleSave}
             />
           ))
         )}
