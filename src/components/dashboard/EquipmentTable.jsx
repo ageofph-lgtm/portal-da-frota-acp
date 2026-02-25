@@ -136,7 +136,7 @@ export default function EquipmentTable({ equipment }) {
                         <StatusBadge status={eq.status} />
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap font-semibold text-slate-800 group-hover:text-[#F08100] transition">
+                    <td className="px-6 py-4 whitespace-nowrap font-semibold text-slate-800 dark:text-slate-100 group-hover:text-[#F08100] transition">
                       {eq.equipment}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-slate-500">
