@@ -142,7 +142,7 @@ export default function EquipmentTable({ equipment }) {
                     <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-slate-500 dark:text-slate-400">
                       {eq.serial_number}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-700">
+                    <td className="px-6 py-4 text-sm text-slate-700 dark:text-slate-300">
                       {editingId === eq.id ? (
                         <Input
                           value={editData.action}
