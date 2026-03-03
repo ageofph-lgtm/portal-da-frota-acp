@@ -84,7 +84,7 @@ export default function Dashboard() {
       <EquipmentTable equipment={equipment} />
 
       {/* Upload Modal */}
-      <FileUploadModal open={uploadOpen} onOpenChange={setUploadOpen} />
+      <FileUploadModal open={uploadOpen} onOpenChange={setUploadOpen} equipment={equipment} />
     </div>
   );
 }
