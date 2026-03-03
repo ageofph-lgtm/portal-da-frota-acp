@@ -54,7 +54,7 @@ export default function Dashboard() {
           className="bg-[#F08100] hover:bg-[#d97200] text-white gap-2 shadow-md"
         >
           <Upload className="w-4 h-4" />
-          Importar Planilha
+          Importar / Exportar
         </Button>
       </div>
 
