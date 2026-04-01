@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import FrotaTabs from "@/components/dashboard/FrotaTabs";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, Save, Wand2, ChevronDown, ChevronRight, LayoutList, Pencil, Check, X } from "lucide-react";
@@ -123,6 +124,7 @@ function GroupSection({ groupKey, items, onDelete, onSave }) {
 }
 
 export default function Gestao() {
+  const [frota, setFrota] = useState("acp1");
   const [showAdd, setShowAdd] = useState(false);
   const [addMode, setAddMode] = useState("manual"); // "manual" | "ai"
   const [deleteId, setDeleteId] = useState(null);
@@ -130,13 +132,15 @@ export default function Gestao() {
   const [groupBy, setGroupBy] = useState("status");
   const queryClient = useQueryClient();
 
-  const { data: equipment = [], isLoading } = useQuery({
+  const { data: allEquipment = [], isLoading } = useQuery({
     queryKey: ["equipment"],
     queryFn: () => base44.entities.Equipment.list("-created_date", 500),
   });
 
+  const equipment = allEquipment.filter((e) => (e.frota || "acp1") === frota);
+
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Equipment.create(data),
+    mutationFn: (data) => base44.entities.Equipment.create({ ...data, frota }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["equipment"] });
       setShowAdd(false);
@@ -145,7 +149,7 @@ export default function Gestao() {
   });
 
   const bulkCreateMutation = useMutation({
-    mutationFn: (records) => base44.entities.Equipment.bulkCreate(records),
+    mutationFn: (records) => base44.entities.Equipment.bulkCreate(records.map((r) => ({ ...r, frota }))),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["equipment"] });
       setShowAdd(false);
@@ -209,11 +213,14 @@ export default function Gestao() {
 
   return (
     <div className="space-y-6">
+      {/* Frota Tabs */}
+      <FrotaTabs active={frota} onChange={setFrota} />
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Gestão de Equipamentos</h1>
-          <p className="text-sm text-slate-500 mt-1">{equipment.length} equipamentos registados</p>
+          <p className="text-sm text-slate-500 mt-1">{equipment.length} equipamentos registados — <span className="font-semibold text-[#F08100]">{frota === "acp1" ? "Frota ACP1" : "Frota ACP2"}</span></p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={openManual} className="gap-2 border-slate-200">

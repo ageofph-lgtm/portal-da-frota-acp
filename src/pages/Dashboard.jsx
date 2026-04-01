@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import FrotaTabs from "@/components/dashboard/FrotaTabs";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Forklift, CheckCircle, AlertOctagon, Package, Wrench, PlayCircle, Search, Upload } from "lucide-react";
@@ -11,11 +12,14 @@ import FileUploadModal from "@/components/dashboard/FileUploadModal";
 
 export default function Dashboard() {
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [frota, setFrota] = useState("acp1");
 
-  const { data: equipment = [], isLoading } = useQuery({
+  const { data: allEquipment = [], isLoading } = useQuery({
     queryKey: ["equipment"],
     queryFn: () => base44.entities.Equipment.list("-created_date", 500),
   });
+
+  const equipment = allEquipment.filter((e) => (e.frota || "acp1") === frota);
 
   const total = equipment.length;
   const count = (st) => equipment.filter((e) => e.status === st).length;
@@ -47,8 +51,9 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      {/* Upload Button */}
-      <div className="flex justify-end">
+      {/* Frota Tabs + Upload Button */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <FrotaTabs active={frota} onChange={setFrota} />
         <Button
           onClick={() => setUploadOpen(true)}
           className="bg-[#F08100] hover:bg-[#d97200] text-white gap-2 shadow-md"
