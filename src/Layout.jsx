@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { LayoutDashboard, Settings, Moon, Sun } from "lucide-react";
+import { LayoutDashboard, Settings, Moon, Sun, Globe } from "lucide-react";
 
 const STILL_LOGO = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/user_683986eb1d316acfa9ad7d61/ec07cb6e0_640px-Still-Logosvg.png";
 
@@ -57,6 +57,17 @@ export default function Layout({ children, currentPageName }) {
               >
                 <LayoutDashboard className="w-4 h-4" />
                 <span className="hidden sm:inline">Dashboard</span>
+              </Link>
+              <Link
+                to={createPageUrl("Geral")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  currentPageName === "Geral"
+                    ? "bg-[#F08100] text-white shadow-md"
+                    : "text-slate-300 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                <Globe className="w-4 h-4" />
+                <span className="hidden sm:inline">Geral</span>
               </Link>
               <Link
                 to={createPageUrl("Gestao")}
