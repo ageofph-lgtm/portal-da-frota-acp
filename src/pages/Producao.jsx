@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Loader2, RefreshCw, Zap, Clock, CheckCircle2, AlertCircle } from "lucide-react";
 
 const BRIDGE_URL = "https://watcherweb.base44.app/api/functions/saganBridge";
@@ -96,11 +96,49 @@ async function updatePortalACP2(serialNumber, novoStatus) {
 }
 
 function formatDuration(minutes) {
-  if (!minutes && minutes !== 0) return null;
-  const h = Math.floor(minutes / 60);
-  const m = Math.round(minutes % 60);
+  if (minutes === null || minutes === undefined) return null;
+  const total = Math.max(0, Math.round(minutes));
+  const h = Math.floor(total / 60);
+  const m = total % 60;
   if (h === 0) return `${m}min`;
   return `${h}h${m > 0 ? ` ${m}min` : ""}`;
+}
+
+function useElapsedTimer(machine) {
+  const [elapsed, setElapsed] = React.useState(null);
+  const ref = React.useRef(null);
+
+  React.useEffect(() => {
+    clearInterval(ref.current);
+    const ativo   = machine?.timer_ativo === true;
+    const pausado = machine?.timer_pausado === true;
+    const inicio  = machine?.timer_inicio || null;
+    const acumulado = machine?.timer_acumulado || 0;
+
+    if (ativo && !pausado && inicio) {
+      const update = () => {
+        const diff = (Date.now() - new Date(inicio).getTime()) / 1000 / 60;
+        setElapsed(acumulado + diff);
+      };
+      update();
+      ref.current = setInterval(update, 1000);
+    } else if (pausado) {
+      setElapsed(acumulado);
+    } else if (!ativo && machine?.timer_duracao_minutos != null) {
+      setElapsed(machine.timer_duracao_minutos);
+    } else {
+      setElapsed(null);
+    }
+    return () => clearInterval(ref.current);
+  }, [
+    machine?.timer_ativo,
+    machine?.timer_pausado,
+    machine?.timer_inicio,
+    machine?.timer_acumulado,
+    machine?.timer_duracao_minutos
+  ]);
+
+  return elapsed;
 }
 
 function formatDate(iso) {
@@ -112,6 +150,7 @@ function formatDate(iso) {
 }
 
 function MachineCard({ machine, acp2Series }) {
+  const timerElapsed = useElapsedTimer(machine);
   const isACP2 = acp2Series.has((machine.serie || "").trim());
   const tecnico = getTecnico(machine.estado || "");
   const hasExpress = (machine.tarefas || []).some(
@@ -119,6 +158,7 @@ function MachineCard({ machine, acp2Series }) {
   );
 
   const timerAtivo = machine.timer_ativo === true;
+  const pausado = machine.timer_pausado === true;
   const timerInicio = machine.timer_inicio || null;
   const timerFim = machine.timer_fim || null;
   const timerDuracao = machine.timer_duracao_minutos;
@@ -168,11 +208,20 @@ function MachineCard({ machine, acp2Series }) {
       </div>
 
       {/* ── TIMER INFO ── */}
-      {(timerInicio || hasDuracao) && (
+      {(timerInicio || hasDuracao || timerElapsed !== null) && (
         <div className="pt-2 border-t border-slate-100 dark:border-slate-700 space-y-1">
+          {/* Ticker em tempo real */}
+          {timerElapsed !== null && (timerAtivo || pausado) && (
+            <div className={`flex items-center gap-1.5 text-[11px] font-mono font-bold ${pausado ? "text-yellow-500" : "text-emerald-500"}`}>
+              {pausado
+                ? <><span className="w-2 h-2 rounded-full bg-yellow-400 inline-block" /> {formatDuration(timerElapsed)} <span className="font-normal text-slate-400">pausado</span></>
+                : <><span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block" /> {formatDuration(timerElapsed)} <span className="font-normal text-slate-400">em curso</span></>
+              }
+            </div>
+          )}
           {timerInicio && (
             <p className="text-[10px] text-slate-400 dark:text-slate-500">
-              {timerAtivo ? "▶" : "⏱"} Início: <span className="font-mono">{formatDate(timerInicio)}</span>
+              ▶ Início: <span className="font-mono">{formatDate(timerInicio)}</span>
             </p>
           )}
           {timerFim && (
@@ -180,13 +229,10 @@ function MachineCard({ machine, acp2Series }) {
               ⏹ Fim: <span className="font-mono">{formatDate(timerFim)}</span>
             </p>
           )}
-          {hasDuracao && (
+          {hasDuracao && !timerAtivo && (
             <p className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
               ✓ Duração: {formatDuration(timerDuracao)}
             </p>
-          )}
-          {timerAtivo && (
-            <p className="text-[10px] font-bold text-emerald-500 animate-pulse">● Em curso</p>
           )}
         </div>
       )}
@@ -346,6 +392,66 @@ export default function Producao() {
               <Column key={id} id={id} machines={maquinas} acp2Series={acp2Series} />
             ))}
           </div>
+
+
+          {/* ── Ranking de Produtividade por Técnico ── */}
+          {(() => {
+            const TECHS = ['raphael','nuno','rogerio','yano'];
+            const stats = TECHS.map(tech => {
+              const concluidas = machines.filter(m =>
+                m.estado?.includes(`concluida-${tech}`) &&
+                m.timer_duracao_minutos != null
+              );
+              const total = concluidas.length;
+              const totalMin = concluidas.reduce((sum, m) => sum + (m.timer_duracao_minutos || 0), 0);
+              const mediaMin = total > 0 ? Math.round(totalMin / total) : null;
+              return { tech, total, totalMin, mediaMin };
+            }).filter(s => s.total > 0 || machines.some(m => m.tecnico === s.tech));
+
+            if (stats.length === 0) return null;
+
+            const COLORS = {
+              raphael: { ring: 'ring-red-400', badge: 'bg-red-500', label: 'RAPHAEL' },
+              nuno:    { ring: 'ring-yellow-400', badge: 'bg-yellow-500', label: 'NUNO' },
+              rogerio: { ring: 'ring-cyan-400', badge: 'bg-cyan-500', label: 'ROGÉRIO' },
+              yano:    { ring: 'ring-green-400', badge: 'bg-green-500', label: 'YANO' },
+            };
+
+            const fmtMin = (m) => {
+              if (m === null) return '—';
+              const h = Math.floor(m / 60); const min = m % 60;
+              return h === 0 ? `${min}min` : `${h}h${min > 0 ? ` ${min}min` : ''}`;
+            };
+
+            return (
+              <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+                <h2 className="text-sm font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide mb-3">
+                  ⏱ Performance por Técnico (máquinas com timer)
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {stats.map(({ tech, total, totalMin, mediaMin }) => {
+                    const c = COLORS[tech] || { ring: 'ring-slate-400', badge: 'bg-slate-400', label: tech };
+                    const emCurso = machines.filter(m => m.tecnico === tech && m.timer_ativo && !m.timer_pausado).length;
+                    const pausadas = machines.filter(m => m.tecnico === tech && m.timer_pausado).length;
+                    return (
+                      <div key={tech} className={`bg-white dark:bg-slate-800 rounded-xl p-4 ring-2 ${c.ring} shadow-sm space-y-2`}>
+                        <div className={`inline-block text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase ${c.badge}`}>
+                          {c.label}
+                        </div>
+                        <div className="space-y-1 text-xs text-slate-500 dark:text-slate-400">
+                          <p className="text-lg font-black text-slate-800 dark:text-slate-100">{total} <span className="text-xs font-normal">concluídas</span></p>
+                          <p>Média por máquina: <span className="font-bold text-slate-700 dark:text-slate-200">{fmtMin(mediaMin)}</span></p>
+                          <p>Total acumulado: <span className="font-bold text-slate-700 dark:text-slate-200">{fmtMin(totalMin)}</span></p>
+                          {emCurso > 0 && <p className="text-emerald-500 font-bold animate-pulse">● {emCurso} em curso</p>}
+                          {pausadas > 0 && <p className="text-yellow-500 font-bold">⏸ {pausadas} pausada{pausadas > 1 ? 's' : ''}</p>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Totais */}
           <div className="flex flex-wrap gap-4 text-sm text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200 dark:border-slate-700">
