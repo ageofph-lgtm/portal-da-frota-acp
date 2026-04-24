@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { LayoutDashboard, Settings, Moon, Sun, Globe } from "lucide-react";
+import { LayoutDashboard, Settings, Moon, Sun, Globe, Kanban } from "lucide-react";
 
 const STILL_LOGO = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/user_683986eb1d316acfa9ad7d61/ec07cb6e0_640px-Still-Logosvg.png";
 
@@ -21,6 +21,13 @@ export default function Layout({ children, currentPageName }) {
     }
   }, [dark]);
 
+  const navLinks = [
+    { page: "Dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { page: "Producao",  icon: Kanban,          label: "Produção"  },
+    { page: "Geral",     icon: Globe,           label: "Geral"     },
+    { page: "Gestao",    icon: Settings,        label: "Gestão"    },
+  ];
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
       {/* Navbar */}
@@ -29,7 +36,6 @@ export default function Layout({ children, currentPageName }) {
           ? "linear-gradient(to right, #374151 0%, #374151 calc(50% - 20px), #111827 calc(50% + 20px), #111827 100%)"
           : "linear-gradient(to right, #ffffff 0%, #ffffff calc(50% - 20px), #1A1A1A calc(50% + 20px), #1A1A1A 100%)"
       }}>
-        {/* Diagonal divider line */}
         <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 1, overflow: "hidden" }}>
           <svg width="100%" height="100%" preserveAspectRatio="none" style={{ position: "absolute", top: 0, left: 0 }}>
             <line x1="calc(50% - 22px)" y1="100%" x2="calc(50% + 22px)" y2="0%"
@@ -47,40 +53,20 @@ export default function Layout({ children, currentPageName }) {
               </span>
             </div>
             <div className="flex items-center gap-1">
-              <Link
-                to={createPageUrl("Dashboard")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  currentPageName === "Dashboard"
-                    ? "bg-[#F08100] text-white shadow-md"
-                    : "text-slate-300 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                <LayoutDashboard className="w-4 h-4" />
-                <span className="hidden sm:inline">Dashboard</span>
-              </Link>
-              <Link
-                to={createPageUrl("Geral")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  currentPageName === "Geral"
-                    ? "bg-[#F08100] text-white shadow-md"
-                    : "text-slate-300 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                <Globe className="w-4 h-4" />
-                <span className="hidden sm:inline">Geral</span>
-              </Link>
-              <Link
-                to={createPageUrl("Gestao")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  currentPageName === "Gestao"
-                    ? "bg-[#F08100] text-white shadow-md"
-                    : "text-slate-300 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                <Settings className="w-4 h-4" />
-                <span className="hidden sm:inline">Gestão</span>
-              </Link>
-              {/* Dark mode toggle */}
+              {navLinks.map(({ page, icon: Icon, label }) => (
+                <Link
+                  key={page}
+                  to={createPageUrl(page)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    currentPageName === page
+                      ? "bg-[#F08100] text-white shadow-md"
+                      : "text-slate-300 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span className="hidden sm:inline">{label}</span>
+                </Link>
+              ))}
               <button
                 onClick={() => setDark(!dark)}
                 className="ml-2 flex items-center justify-center w-9 h-9 rounded-lg transition-all text-slate-300 hover:text-white hover:bg-white/10"
