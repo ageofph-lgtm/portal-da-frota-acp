@@ -95,50 +95,57 @@ async function updatePortalACP2(serialNumber, novoStatus) {
   }
 }
 
-function formatDuration(minutes) {
+function formatDuration(seconds) {
+  if (seconds === null || seconds === undefined || isNaN(seconds)) return null;
+  const s = Math.max(0, Math.floor(seconds));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  const pad = n => String(n).padStart(2, "0");
+  if (h > 0) return `${h}:${pad(m)}:${pad(sec)}`;
+  return `${pad(m)}:${pad(sec)}`;
+}
+function formatDurationMin(minutes) {
   if (minutes === null || minutes === undefined) return null;
-  const total = Math.max(0, Math.round(minutes));
-  const h = Math.floor(total / 60);
-  const m = total % 60;
-  if (h === 0) return `${m}min`;
-  return `${h}h${m > 0 ? ` ${m}min` : ""}`;
+  return formatDuration(Math.round(minutes) * 60);
+}
+
+function computeElapsed(m) {
+  if (!m) return null;
+  const ativo   = m.timer_ativo   === true;
+  const pausado = m.timer_pausado === true;
+  const acumSec = (m.timer_acumulado || 0) * 60;
+  if (ativo && !pausado && m.timer_inicio) {
+    return acumSec + (Date.now() - new Date(m.timer_inicio).getTime()) / 1000;
+  }
+  if (pausado) return acumSec;
+  if (!ativo && m.timer_duracao_minutos != null) return m.timer_duracao_minutos * 60;
+  return null;
 }
 
 function useElapsedTimer(machine) {
-  const [elapsed, setElapsed] = React.useState(null);
-  const ref = React.useRef(null);
+  const [elapsed, setElapsed] = React.useState(() => computeElapsed(machine));
+  const machineRef = React.useRef(machine);
+  const timerRef   = React.useRef(null);
+
+  React.useEffect(() => { machineRef.current = machine; });
 
   React.useEffect(() => {
-    clearInterval(ref.current);
-    const ativo   = machine?.timer_ativo === true;
+    clearInterval(timerRef.current);
+    timerRef.current = null;
+    const ativo   = machine?.timer_ativo   === true;
     const pausado = machine?.timer_pausado === true;
-    const inicio  = machine?.timer_inicio || null;
-    const acumulado = machine?.timer_acumulado || 0;
-
-    if (ativo && !pausado && inicio) {
-      const update = () => {
-        const diff = (Date.now() - new Date(inicio).getTime()) / 1000 / 60;
-        setElapsed(acumulado + diff);
-      };
-      update();
-      ref.current = setInterval(update, 1000);
-    } else if (pausado) {
-      setElapsed(acumulado);
-    } else if (!ativo && machine?.timer_duracao_minutos != null) {
-      setElapsed(machine.timer_duracao_minutos);
+    if (ativo && !pausado) {
+      const tick = () => setElapsed(computeElapsed(machineRef.current));
+      tick();
+      timerRef.current = setInterval(tick, 1000);
     } else {
-      setElapsed(null);
+      setElapsed(computeElapsed(machine));
     }
-    return () => clearInterval(ref.current);
-  }, [
-    machine?.timer_ativo,
-    machine?.timer_pausado,
-    machine?.timer_inicio,
-    machine?.timer_acumulado,
-    machine?.timer_duracao_minutos
-  ]);
+    return () => { clearInterval(timerRef.current); timerRef.current = null; };
+  }, [machine?.timer_ativo, machine?.timer_pausado, machine?.timer_inicio, machine?.timer_acumulado, machine?.timer_duracao_minutos]);
 
-  return elapsed;
+  return elapsed; // segundos
 }
 
 function formatDate(iso) {
@@ -231,7 +238,7 @@ function MachineCard({ machine, acp2Series }) {
           )}
           {hasDuracao && !timerAtivo && (
             <p className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-              ✓ Duração: {formatDuration(timerDuracao)}
+              ✓ {formatDurationMin(timerDuracao)}
             </p>
           )}
         </div>
@@ -417,11 +424,7 @@ export default function Producao() {
               yano:    { ring: 'ring-green-400', badge: 'bg-green-500', label: 'YANO' },
             };
 
-            const fmtMin = (m) => {
-              if (m === null) return '—';
-              const h = Math.floor(m / 60); const min = m % 60;
-              return h === 0 ? `${min}min` : `${h}h${min > 0 ? ` ${min}min` : ''}`;
-            };
+            const fmtMin = (m) => m === null ? '—' : formatDurationMin(m);
 
             return (
               <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
