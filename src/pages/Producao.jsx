@@ -95,12 +95,34 @@ async function updatePortalACP2(serialNumber, novoStatus) {
   }
 }
 
+function formatDuration(minutes) {
+  if (!minutes && minutes !== 0) return null;
+  const h = Math.floor(minutes / 60);
+  const m = Math.round(minutes % 60);
+  if (h === 0) return `${m}min`;
+  return `${h}h${m > 0 ? ` ${m}min` : ""}`;
+}
+
+function formatDate(iso) {
+  if (!iso) return null;
+  return new Date(iso).toLocaleString("pt-PT", {
+    day: "2-digit", month: "2-digit", year: "2-digit",
+    hour: "2-digit", minute: "2-digit"
+  });
+}
+
 function MachineCard({ machine, acp2Series }) {
   const isACP2 = acp2Series.has((machine.serie || "").trim());
   const tecnico = getTecnico(machine.estado || "");
   const hasExpress = (machine.tarefas || []).some(
     (t) => (t.texto || "").toUpperCase() === "EXPRESS"
   );
+
+  const timerAtivo = machine.timer_ativo === true;
+  const timerInicio = machine.timer_inicio || null;
+  const timerFim = machine.timer_fim || null;
+  const timerDuracao = machine.timer_duracao_minutos;
+  const hasDuracao = timerDuracao !== null && timerDuracao !== undefined;
 
   return (
     <div className={`bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 space-y-2 transition-all hover:shadow-md ${isACP2 ? "ring-1 ring-[#F08100]/40" : ""}`}>
@@ -144,6 +166,30 @@ function MachineCard({ machine, acp2Series }) {
           </span>
         )}
       </div>
+
+      {/* ── TIMER INFO ── */}
+      {(timerInicio || hasDuracao) && (
+        <div className="pt-2 border-t border-slate-100 dark:border-slate-700 space-y-1">
+          {timerInicio && (
+            <p className="text-[10px] text-slate-400 dark:text-slate-500">
+              {timerAtivo ? "▶" : "⏱"} Início: <span className="font-mono">{formatDate(timerInicio)}</span>
+            </p>
+          )}
+          {timerFim && (
+            <p className="text-[10px] text-slate-400 dark:text-slate-500">
+              ⏹ Fim: <span className="font-mono">{formatDate(timerFim)}</span>
+            </p>
+          )}
+          {hasDuracao && (
+            <p className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+              ✓ Duração: {formatDuration(timerDuracao)}
+            </p>
+          )}
+          {timerAtivo && (
+            <p className="text-[10px] font-bold text-emerald-500 animate-pulse">● Em curso</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
