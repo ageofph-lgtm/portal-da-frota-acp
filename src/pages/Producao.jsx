@@ -97,8 +97,8 @@ async function updatePortalACP2(serialNumber, novoStatus) {
 
 // ─── Timer (apenas leitura, mesmo schema do Watcher) ─────────────────────────
 // Campos persistidos em FrotaACP:
-//   timer_running_since        (ISO | null)
-//   timer_accumulated_seconds  (number)
+//   timer_inicio        (ISO | null)
+//   timer_acumulado  (number)
 function formatHMS(seconds) {
   if (seconds === null || seconds === undefined || isNaN(seconds)) return "00:00:00";
   const s = Math.max(0, Math.floor(seconds));
@@ -111,14 +111,14 @@ function formatHMS(seconds) {
 
 function getTimerElapsedSeconds(m) {
   if (!m) return 0;
-  const acc = Number(m.timer_accumulated_seconds) || 0;
-  const since = m.timer_running_since;
+  const acc = Number(m.timer_acumulado) || 0;
+  const since = m.timer_inicio;
   if (!since) return acc;
   return acc + Math.max(0, (Date.now() - new Date(since).getTime()) / 1000);
 }
 
-const isRunning = (m) => !!m?.timer_running_since;
-const isPaused  = (m) => !m?.timer_running_since && (Number(m?.timer_accumulated_seconds) || 0) > 0;
+const isRunning = (m) => !!m?.timer_inicio;
+const isPaused  = (m) => !m?.timer_inicio && (Number(m?.timer_acumulado) || 0) > 0;
 
 function useTimerElapsed(machine) {
   const [elapsed, setElapsed] = React.useState(() => getTimerElapsedSeconds(machine));
@@ -131,7 +131,7 @@ function useTimerElapsed(machine) {
     if (!isRunning(machine)) return;
     const id = setInterval(() => setElapsed(getTimerElapsedSeconds(machineRef.current)), 1000);
     return () => clearInterval(id);
-  }, [machine?.timer_running_since, machine?.timer_accumulated_seconds]);
+  }, [machine?.timer_inicio, machine?.timer_acumulado]);
 
   return elapsed;
 }
@@ -375,10 +375,10 @@ export default function Producao() {
             const stats = TECHS.map(tech => {
               const concluidas = machines.filter(m =>
                 m.estado?.includes(`concluida-${tech}`) &&
-                (Number(m.timer_accumulated_seconds) || 0) > 0
+                (Number(m.timer_acumulado) || 0) > 0
               );
               const total = concluidas.length;
-              const totalSec = concluidas.reduce((sum, m) => sum + (Number(m.timer_accumulated_seconds) || 0), 0);
+              const totalSec = concluidas.reduce((sum, m) => sum + (Number(m.timer_acumulado) || 0), 0);
               const mediaSec = total > 0 ? Math.round(totalSec / total) : null;
               return { tech, total, totalSec, mediaSec };
             }).filter(s => s.total > 0 || machines.some(m => m.tecnico === s.tech));
