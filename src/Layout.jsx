@@ -1,14 +1,27 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { LayoutDashboard, Settings, Moon, Sun, Globe, Kanban } from "lucide-react";
+import { LayoutDashboard, Settings, Moon, Sun, Globe, Kanban, Zap } from "lucide-react";
 
-const STILL_LOGO = "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/user_683986eb1d316acfa9ad7d61/ec07cb6e0_640px-Still-Logosvg.png";
+const WATCHER_LOGO = "https://media.base44.com/images/public/69c166ad19149fb0c07883cb/0063feaf2_Gemini_Generated_Image_scmohbscmohbscmo.png";
+
+const T = {
+  pink:   '#FF2D78',
+  blue:   '#4D9FFF',
+  purple: '#9B5CF6',
+  green:  '#22C55E',
+  dark:  { bg: '#06060D', nav: 'rgba(6,6,13,0.98)', border: '#1A1A2F', text: '#E4E6FF', muted: '#5A5A8A' },
+  light: { bg: '#E4E6EE', nav: 'rgba(232,234,245,0.97)', border: '#BFC3D8', text: '#0B0C18', muted: '#626480' },
+};
 
 export default function Layout({ children, currentPageName }) {
   const [dark, setDark] = useState(() => {
-    try { return localStorage.getItem("theme") === "dark"; } catch { return false; }
+    try {
+      const saved = localStorage.getItem("theme");
+      return saved ? saved === "dark" : true; // default dark
+    } catch { return true; }
   });
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -21,74 +34,167 @@ export default function Layout({ children, currentPageName }) {
     }
   }, [dark]);
 
+  useEffect(() => {
+    const iv = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(iv);
+  }, []);
+
+  const theme = dark ? T.dark : T.light;
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
   const navLinks = [
-    { page: "Dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { page: "Producao",  icon: Kanban,          label: "Produção"  },
-    { page: "Geral",     icon: Globe,           label: "Geral"     },
-    { page: "Gestao",    icon: Settings,        label: "Gestão"    },
+    { page: "Dashboard", icon: LayoutDashboard, label: "DASHBOARD" },
+    { page: "Producao",  icon: Kanban,          label: "PRODUÇÃO"  },
+    { page: "Geral",     icon: Globe,           label: "GERAL"     },
+    { page: "Gestao",    icon: Settings,        label: "GESTÃO"    },
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
-      {/* Navbar */}
-      <nav className="shadow-lg overflow-hidden relative" style={{
+    <div className="min-h-screen flex flex-col cyber-bg-page" style={{ background: theme.bg }}>
+      {/* ── NAVBAR ── */}
+      <nav style={{
         background: dark
-          ? "linear-gradient(to right, #374151 0%, #374151 calc(50% - 20px), #111827 calc(50% + 20px), #111827 100%)"
-          : "linear-gradient(to right, #ffffff 0%, #ffffff calc(50% - 20px), #1A1A1A calc(50% + 20px), #1A1A1A 100%)"
+          ? 'linear-gradient(180deg, rgba(6,6,13,0.98) 0%, rgba(9,9,20,0.96) 100%)'
+          : 'linear-gradient(180deg, rgba(232,234,245,0.98) 0%, rgba(220,222,235,0.96) 100%)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        borderBottom: `1px solid ${theme.border}`,
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
       }}>
-        <div style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 1, overflow: "hidden" }}>
-          <svg width="100%" height="100%" preserveAspectRatio="none" style={{ position: "absolute", top: 0, left: 0 }}>
-            <line x1="calc(50% - 22px)" y1="100%" x2="calc(50% + 22px)" y2="0%"
-              stroke={dark ? "#6b7280" : "white"} strokeWidth="2" />
-          </svg>
-        </div>
+        {/* Linha neon superior */}
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0, height: '1px',
+          background: `linear-gradient(90deg, transparent 0%, ${T.pink} 25%, ${T.blue} 75%, transparent 100%)`,
+          opacity: dark ? 0.9 : 0.5,
+        }} />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative" style={{ zIndex: 2 }}>
-          <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center gap-4">
-              <img src={STILL_LOGO} alt="STILL" className="h-8 w-auto" />
-              <div className={`hidden sm:block h-6 w-px ${dark ? "bg-slate-500" : "bg-slate-600"}`} />
-              <span className={`hidden sm:block font-semibold text-lg tracking-tight ${dark ? "text-slate-200" : "text-slate-800"}`}>
-                Frota ACP
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              {navLinks.map(({ page, icon: Icon, label }) => (
-                <Link
-                  key={page}
-                  to={createPageUrl(page)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    currentPageName === page
-                      ? "bg-[#F08100] text-white shadow-md"
-                      : "text-slate-300 hover:text-white hover:bg-white/10"
-                  }`}
+        <div className="max-w-[1600px] mx-auto px-3 sm:px-6">
+          <div className="flex items-center justify-between h-16 gap-2 sm:gap-4">
+            {/* LOGO + TÍTULO */}
+            <Link to={createPageUrl("Dashboard")} className="flex items-center gap-3 min-w-0">
+              <img
+                src={WATCHER_LOGO}
+                alt="Frota ACP"
+                className="h-9 w-9 object-contain shrink-0"
+                style={{ filter: dark ? 'drop-shadow(0 0 12px rgba(255,45,120,0.6))' : 'drop-shadow(0 0 4px rgba(255,45,120,0.3))' }}
+              />
+              <div className="hidden sm:block min-w-0">
+                <div
+                  className="watcher-title truncate"
+                  style={{
+                    fontSize: '15px',
+                    fontWeight: 900,
+                    color: T.pink,
+                    textShadow: dark ? '0 0 14px rgba(255,45,120,0.7)' : 'none',
+                  }}
                 >
-                  <Icon className="w-4 h-4" />
-                  <span className="hidden sm:inline">{label}</span>
-                </Link>
-              ))}
+                  FROTA ACP
+                </div>
+                <div style={{
+                  fontFamily: 'monospace',
+                  fontSize: '8px',
+                  color: theme.muted,
+                  letterSpacing: '0.18em',
+                  textTransform: 'uppercase',
+                  marginTop: '-2px',
+                }}>
+                  [PORTAL · STILL · UNIT-LINK-01]
+                </div>
+              </div>
+            </Link>
+
+            {/* NAV LINKS */}
+            <div className="flex items-center gap-1 overflow-x-auto">
+              {navLinks.map(({ page, icon: Icon, label }) => {
+                const active = currentPageName === page;
+                return (
+                  <Link
+                    key={page}
+                    to={createPageUrl(page)}
+                    className="relative flex items-center gap-2 px-3 sm:px-4 py-2 transition-all shrink-0"
+                    style={{
+                      fontFamily: "'Rajdhani', sans-serif",
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      letterSpacing: '0.14em',
+                      color: active ? '#fff' : theme.muted,
+                      background: active
+                        ? `linear-gradient(135deg, ${T.pink}, ${T.purple})`
+                        : 'transparent',
+                      border: `1px solid ${active ? 'rgba(255,45,120,0.6)' : 'transparent'}`,
+                      boxShadow: active && dark ? '0 0 18px rgba(255,45,120,0.45)' : 'none',
+                    }}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span className="hidden sm:inline">{label}</span>
+                  </Link>
+                );
+              })}
+
               <button
                 onClick={() => setDark(!dark)}
-                className="ml-2 flex items-center justify-center w-9 h-9 rounded-lg transition-all text-slate-300 hover:text-white hover:bg-white/10"
                 title={dark ? "Modo claro" : "Modo escuro"}
+                className="ml-1 flex items-center justify-center w-9 h-9 transition-all shrink-0"
+                style={{
+                  border: `1px solid ${dark ? 'rgba(255,184,0,0.35)' : 'rgba(77,159,255,0.35)'}`,
+                  background: dark ? 'rgba(255,184,0,0.07)' : 'rgba(77,159,255,0.07)',
+                  borderRadius: '4px',
+                }}
               >
-                {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                {dark
+                  ? <Sun className="w-4 h-4" style={{ color: '#FFB800', filter: 'drop-shadow(0 0 4px rgba(255,184,0,0.7))' }} />
+                  : <Moon className="w-4 h-4" style={{ color: T.blue }} />
+                }
               </button>
             </div>
           </div>
         </div>
       </nav>
 
-      {/* Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* ── MAIN ── */}
+      <main className="flex-1 max-w-[1600px] w-full mx-auto px-3 sm:px-6 py-6 sm:py-8">
         {children}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 mt-8 transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <p className="text-center text-xs text-slate-400 dark:text-slate-500">
-            Portal da Frota ACP &middot; STILL &middot; Gestão Integrada de Equipamentos
+      {/* ── FOOTER CYBER ── */}
+      <footer style={{
+        borderTop: `1px solid ${theme.border}`,
+        background: dark
+          ? 'linear-gradient(180deg, rgba(6,6,13,0.98) 0%, rgba(9,9,16,1) 100%)'
+          : theme.nav,
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        position: 'relative',
+        marginTop: '24px',
+      }}>
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+          background: `linear-gradient(90deg, transparent 0%, ${T.pink} 25%, ${T.blue} 75%, transparent 100%)`,
+          opacity: dark ? 0.9 : 0.5,
+        }} />
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-2 flex-wrap">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22C55E', boxShadow: '0 0 8px rgba(34,197,94,0.9)' }} className="animate-dot-blink" />
+            <span style={{ fontFamily: 'monospace', fontSize: '10px', color: theme.muted, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+              SYNC ATIVO
+            </span>
+            <div style={{ fontFamily: 'monospace', fontSize: '10px', color: theme.muted, letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <Zap size={9} color={T.pink} style={{ opacity: 0.7 }} />
+              <span style={{ color: dark ? T.blue : T.blue, fontWeight: 700 }}>{timeStr}</span>
+            </div>
+          </div>
+          <p style={{
+            fontFamily: 'monospace',
+            fontSize: '9px',
+            color: theme.muted,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            margin: 0,
+          }}>
+            PORTAL FROTA ACP &middot; STILL &middot; LINK · WATCHER
           </p>
         </div>
       </footer>
