@@ -583,7 +583,16 @@ function DayTimeline({ activeMachines, queueMachines }) {
                 zIndex: 2,
               }}
             >
-              <span style={{fontFamily:"'Orbitron',monospace",fontSize:'9px',fontWeight:900,letterSpacing:'0.06em'}}>{b.nsLabel||b.label}</span>{b.modeloLabel && b.nsLabel && <span style={{fontSize:'7px',opacity:0.6,marginLeft:'4px'}}>{b.modeloLabel}</span>}
+              <span style={{
+                fontFamily:"'Orbitron',monospace",fontSize:'10px',fontWeight:900,
+                letterSpacing:'0.06em',flexShrink:0,whiteSpace:'nowrap',
+              }}>{b.nsLabel||b.label}</span>
+              {b.modeloLabel && b.nsLabel && width > 15 && (
+                <span style={{fontSize:'7px',opacity:0.55,marginLeft:'4px',
+                  whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',flexShrink:1}}>
+                  {b.modeloLabel}
+                </span>
+              )}
             </div>
           );
         })}

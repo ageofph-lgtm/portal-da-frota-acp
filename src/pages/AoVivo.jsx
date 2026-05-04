@@ -575,10 +575,10 @@ function GanttChart({ machines, D }) {
     );
   }
 
-  const totalH = blocks.length * (BAR_H + GAP);
+  const totalH = Math.max(120, blocks.length * (BAR_H + GAP));
 
   return (
-    <div style={{display:"flex",flexDirection:"column",gap:"8px",flex:1,overflow:"hidden"}}>
+    <div style={{display:"flex",flexDirection:"column",gap:"8px",flex:1,overflowY:"auto",overflowX:"hidden"}}>
 
       {/* ── Régua de dias ── */}
       <div style={{
@@ -637,7 +637,7 @@ function GanttChart({ machines, D }) {
       </div>
 
       {/* ── Área de barras ── */}
-      <div style={{position:"relative",flex:1,overflow:"hidden"}}>
+      <div style={{position:"relative",height:`${totalH}px`,overflow:"hidden",flexShrink:0}}>
         {/* Grade vertical de fundo */}
         {ruleDays.map((d,i) => {
           const left = (i / numDays) * 100;
@@ -701,31 +701,30 @@ function GanttChart({ machines, D }) {
                 <div style={{flexShrink:0,width:"6px",height:"6px",borderRadius:"50%",
                   background:"#fff",animation:"blink 1s ease-in-out infinite"}}/>
               )}
-              {/* NS — protagonista */}
+              {/* NS — protagonista, sempre visível, nunca cortado por maxWidth */}
               <span style={{
                 fontFamily:"'Orbitron',monospace",
-                fontSize:"12px",
+                fontSize:"11px",
                 fontWeight:900,
                 color:"#fff",
-                letterSpacing:"0.07em",
+                letterSpacing:"0.06em",
                 whiteSpace:"nowrap",
-                overflow:"hidden",
-                textOverflow:"ellipsis",
-                textShadow:"0 1px 5px rgba(0,0,0,0.8)",
                 flexShrink:0,
-                maxWidth:"55%",
+                textShadow:"0 1px 5px rgba(0,0,0,0.9)",
               }}>
                 {b.m.serie || "—"}
               </span>
-              {/* Modelo */}
+              {/* Modelo — só aparece se sobrar espaço */}
+              {width > 12 && (
               <span style={{
-                fontFamily:"monospace",fontSize:"9px",
-                color:"rgba(255,255,255,0.65)",
+                fontFamily:"monospace",fontSize:"8px",
+                color:"rgba(255,255,255,0.55)",
                 whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",
-                flexShrink:1,
+                flexShrink:1,minWidth:0,
               }}>
                 {b.m.modelo}
               </span>
+              )}
               {/* Badges */}
               {b.isPrio && (
                 <span style={{flexShrink:0,fontFamily:"monospace",fontSize:"8px",
