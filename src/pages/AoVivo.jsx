@@ -728,19 +728,42 @@ export default function AoVivo(){
 
       {/* ── SLIDE CONTENT — ocupa tudo, sem overflow ── */}
       <div style={{flex:1,padding:"14px 20px",overflow:"hidden",display:"flex",flexDirection:"column",position:"relative"}}>
-        {/* Marca d'água Jordan */}
+        {/* Jordan mascote */}
         <div style={{
           position:"absolute",bottom:0,right:0,
           width:"38%",maxWidth:"340px",
-          aspectRatio:"1/1.2",
-          backgroundImage:`url(https://base44.app/api/apps/69c166ad19149fb0c07883cb/files/mp/public/69c166ad19149fb0c07883cb/d672073ee_3c1ea8ca9_Gemini_Generated_Image_if4bsvif4bsvif4b.png)`,
-          backgroundSize:"contain",
-          backgroundRepeat:"no-repeat",
-          backgroundPosition:"bottom right",
-          opacity:0.07,
           pointerEvents:"none",
           zIndex:0,
-        }}/>
+          display:"flex",
+          alignItems:"flex-end",
+          justifyContent:"flex-end",
+        }}>
+          {/* Neon rosa ao redor — camada de glow */}
+          <div style={{
+            position:"absolute",bottom:0,right:0,
+            width:"100%",height:"100%",
+            backgroundImage:`url(${JORDAN_URL})`,
+            backgroundSize:"contain",
+            backgroundRepeat:"no-repeat",
+            backgroundPosition:"bottom right",
+            filter:"blur(18px) brightness(1.2) saturate(3) hue-rotate(-10deg)",
+            opacity:0.55,
+          }}/>
+          {/* Imagem principal com opacidade alta */}
+          <img
+            src={JORDAN_URL}
+            alt=""
+            style={{
+              position:"relative",
+              width:"100%",
+              objectFit:"contain",
+              objectPosition:"bottom right",
+              opacity:0.88,
+              filter:"drop-shadow(0 0 22px #FF2D78cc) drop-shadow(0 0 8px #FF2D78aa) drop-shadow(0 0 4px rgba(255,255,255,0.25))",
+              display:"block",
+            }}
+          />
+        </div>
         {loading
           ?<div style={{display:"flex",alignItems:"center",justifyContent:"center",flex:1,position:"relative",zIndex:1}}>
             <span style={{fontFamily:"'Orbitron',monospace",fontSize:"12px",color:D.muted,
