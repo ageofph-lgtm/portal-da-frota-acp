@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Activity, AlertTriangle, CheckCircle2, ListOrdered, Sun, Moon } from "lucide-react";
+import { Activity, Flag, CheckCircle2, ListOrdered, Sun, Moon, ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 
-// ── Config ───────────────────────────────────────────────────────────────────
+// ── Config ────────────────────────────────────────────────────────────────────
 const BRIDGE_URL = "https://watcherweb.base44.app/api/functions/saganBridge";
 const BRIDGE_HEADERS = {
   "Content-Type": "application/json",
   "x-sagan-secret": "sagan-watcher-bridge-2026",
   "api_key": "f8517554492e492090b62dd501ad7e14",
 };
+const SLIDE_DURATION = 30000; // 30 segundos
 
 async function callBridge(payload) {
   const res = await fetch(BRIDGE_URL, { method: "POST", headers: BRIDGE_HEADERS, body: JSON.stringify(payload) });
@@ -15,12 +16,12 @@ async function callBridge(payload) {
   return data.result || [];
 }
 
-// ── Design tokens ─────────────────────────────────────────────────────────────
+// ── Design ────────────────────────────────────────────────────────────────────
 const DT = (dark) => ({
   bg:      dark ? '#06060d' : '#eef0f7',
   surface: dark ? '#0d0d1c' : '#ffffff',
-  card:    dark ? '#101022' : '#f5f6fc',
-  border:  dark ? 'rgba(255,45,120,0.15)' : 'rgba(77,100,200,0.15)',
+  card:    dark ? '#111126' : '#f5f6fc',
+  border:  dark ? 'rgba(255,45,120,0.13)' : 'rgba(77,100,200,0.13)',
   pink:    '#FF2D78',
   blue:    '#4D9FFF',
   green:   '#22C55E',
@@ -28,23 +29,18 @@ const DT = (dark) => ({
   red:     '#EF4444',
   purple:  '#9B5CF6',
   text:    dark ? '#e4e6ff' : '#0b0c18',
-  muted:   dark ? 'rgba(228,230,255,0.4)' : 'rgba(11,12,24,0.45)',
-  glow:    (c) => `0 0 16px ${c}88`,
+  muted:   dark ? 'rgba(228,230,255,0.38)' : 'rgba(11,12,24,0.42)',
+  sub:     dark ? 'rgba(228,230,255,0.18)' : 'rgba(11,12,24,0.2)',
 });
 
-const TECH_COLORS = { raphael:'#ef4444', nuno:'#f59e0b', rogerio:'#06b6d4', yano:'#22c55e', patrick:'#a855f7' };
-const tc = (t) => TECH_COLORS[(t||'').toLowerCase()] || '#6b7280';
-const tl = (t) => t ? t.charAt(0).toUpperCase() + t.slice(1).toLowerCase() : '—';
-
 function fmtHMS(s) {
-  if (!s) return '00:00:00';
+  if (!s && s !== 0) return '00:00:00';
   const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
   return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
 }
-
-function fmtDate(d) {
-  if (!d) return '—';
-  return new Date(d).toLocaleDateString('pt-PT', { day:'2-digit', month:'short' });
+function fmtDate(v) {
+  if (!v) return '—';
+  return new Date(v).toLocaleDateString('pt-PT', { day:'2-digit', month:'short' });
 }
 
 // ── Timer ao vivo ─────────────────────────────────────────────────────────────
@@ -62,15 +58,191 @@ function useLiveTimer(m) {
   return elapsed;
 }
 
-// ── Slide wrapper ─────────────────────────────────────────────────────────────
-function SlideWrap({ title, icon, color, pulse, D, children }) {
+// ── RELÓGIO ───────────────────────────────────────────────────────────────────
+function LiveClock({ D }) {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => { const id = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(id); }, []);
   return (
-    <div style={{ flex:1, display:'flex', flexDirection:'column', gap:'20px', overflow:'hidden' }}>
-      <div style={{ display:'flex', alignItems:'center', gap:'12px' }}>
-        <div style={{ color, filter:`drop-shadow(0 0 8px ${color})` }}>{icon}</div>
-        <h2 style={{ fontFamily:"'Orbitron',monospace", fontSize:'20px', fontWeight:900, letterSpacing:'0.15em', color, textShadow:`0 0 18px ${color}88`, margin:0 }}>{title}</h2>
-        {pulse && <div style={{ width:'9px', height:'9px', borderRadius:'50%', background:color, boxShadow:`0 0 10px ${color}`, animation:'dot-blink 1s ease-in-out infinite' }} />}
-        <div style={{ flex:1, height:'1px', background:`linear-gradient(90deg,${color}55,transparent)` }} />
+    <div style={{ textAlign:'right', lineHeight:1.2 }}>
+      <div style={{ fontFamily:"'Orbitron',monospace", fontSize:'18px', fontWeight:800, color:D.text, letterSpacing:'0.07em' }}>
+        {now.toLocaleTimeString('pt-PT')}
+      </div>
+      <div style={{ fontFamily:'monospace', fontSize:'9px', color:D.muted, letterSpacing:'0.06em', textTransform:'uppercase' }}>
+        {now.toLocaleDateString('pt-PT',{weekday:'long',day:'2-digit',month:'short'})}
+      </div>
+    </div>
+  );
+}
+
+// ── CARD EM ANDAMENTO ─────────────────────────────────────────────────────────
+function CardAndamento({ m, D, accent }) {
+  const elapsed = useLiveTimer(m);
+  const running = m.timer_status === 'running';
+  const tasks   = m.tarefas || [];
+  const done    = tasks.filter(t => t.concluida).length;
+  const pct     = tasks.length > 0 ? Math.round((done/tasks.length)*100) : 0;
+  const isPrio  = m.prioridade === true;
+
+  return (
+    <div style={{
+      background: D.card,
+      border: `1.5px solid ${isPrio ? D.yellow+'66' : accent+'33'}`,
+      borderRadius: '14px',
+      padding: '16px 18px',
+      display: 'flex', flexDirection:'column', gap:'10px',
+      boxShadow: isPrio ? `0 0 18px ${D.yellow}22` : `0 0 12px ${accent}11`,
+    }}>
+      {/* Header */}
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:'8px' }}>
+        <div style={{ minWidth:0 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:'6px', flexWrap:'wrap' }}>
+            {isPrio && <Flag size={11} color={D.yellow} style={{ flexShrink:0 }}/>}
+            <span style={{ fontFamily:"'Orbitron',monospace", fontSize:'15px', fontWeight:800, color:D.text, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{m.modelo || '—'}</span>
+          </div>
+          <div style={{ fontFamily:'monospace', fontSize:'9px', color:D.muted, marginTop:'2px', letterSpacing:'0.07em' }}>{m.serie}</div>
+        </div>
+        <div style={{ textAlign:'right', flexShrink:0 }}>
+          <div style={{ fontFamily:"'Orbitron',monospace", fontSize:'18px', fontWeight:900, color: running ? D.green : D.yellow, letterSpacing:'0.04em' }}>{fmtHMS(elapsed)}</div>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'flex-end', gap:'4px', marginTop:'2px' }}>
+            <div style={{ width:'6px', height:'6px', borderRadius:'50%', background: running ? D.green : D.yellow, animation: running ? 'blink 1.2s ease-in-out infinite' : 'none' }}/>
+            <span style={{ fontFamily:'monospace', fontSize:'8px', color:D.muted, letterSpacing:'0.1em' }}>{running ? 'EM CURSO' : 'PAUSADO'}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Tarefas */}
+      {tasks.length > 0 && (
+        <div style={{ display:'flex', flexDirection:'column', gap:'4px' }}>
+          {tasks.map((t,i) => (
+            <div key={i} style={{ display:'flex', alignItems:'center', gap:'6px' }}>
+              <div style={{ width:'11px', height:'11px', borderRadius:'3px', border:`1.5px solid ${t.concluida ? D.green : D.sub}`, background: t.concluida ? D.green : 'transparent', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                {t.concluida && <span style={{ color:'#000', fontSize:'7px', fontWeight:900 }}>✓</span>}
+              </div>
+              <span style={{ fontFamily:'monospace', fontSize:'10px', color: t.concluida ? D.muted : D.text, textDecoration: t.concluida ? 'line-through' : 'none' }}>{t.texto}</span>
+            </div>
+          ))}
+          <div style={{ marginTop:'4px' }}>
+            <div style={{ height:'3px', borderRadius:'2px', background:`${D.sub}`, overflow:'hidden' }}>
+              <div style={{ height:'100%', width:`${pct}%`, background:`linear-gradient(90deg,${D.pink},${D.blue})`, transition:'width 0.5s ease' }}/>
+            </div>
+            <div style={{ fontFamily:'monospace', fontSize:'8px', color:D.muted, marginTop:'2px', textAlign:'right' }}>{done}/{tasks.length} · {pct}%</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── CARD PRIORITÁRIA ──────────────────────────────────────────────────────────
+function CardPrio({ m, D }) {
+  const elapsed = useLiveTimer(m);
+  const running = m.timer_status === 'running';
+  const tasks   = m.tarefas || [];
+  const isActive = m.estado?.startsWith('em-preparacao');
+
+  return (
+    <div style={{
+      background: D.card,
+      border: `2px solid ${D.yellow}66`,
+      borderRadius: '14px',
+      padding: '16px 18px',
+      display: 'flex', flexDirection:'column', gap:'10px',
+      boxShadow: `0 0 22px ${D.yellow}22`,
+    }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:'8px' }}>
+        <div style={{ minWidth:0 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:'6px' }}>
+            <Flag size={13} color={D.yellow}/>
+            <span style={{ fontFamily:"'Orbitron',monospace", fontSize:'15px', fontWeight:800, color:D.text }}>{m.modelo}</span>
+          </div>
+          <div style={{ fontFamily:'monospace', fontSize:'9px', color:D.muted, marginTop:'2px' }}>{m.serie}</div>
+        </div>
+        <div style={{ textAlign:'right', flexShrink:0 }}>
+          {isActive ? (
+            <>
+              <div style={{ fontFamily:"'Orbitron',monospace", fontSize:'18px', fontWeight:900, color: running ? D.green : D.yellow }}>{fmtHMS(elapsed)}</div>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'flex-end', gap:'4px', marginTop:'2px' }}>
+                <div style={{ width:'6px', height:'6px', borderRadius:'50%', background: running ? D.green : D.yellow, animation: running ? 'blink 1.2s ease-in-out infinite' : 'none' }}/>
+                <span style={{ fontFamily:'monospace', fontSize:'8px', color:D.muted }}>{running ? 'EM CURSO' : 'PAUSADO'}</span>
+              </div>
+            </>
+          ) : (
+            <span style={{ fontFamily:'monospace', fontSize:'9px', padding:'3px 10px', borderRadius:'20px', background:`${D.yellow}18`, color:D.yellow, border:`1px solid ${D.yellow}44` }}>AGUARDA</span>
+          )}
+        </div>
+      </div>
+
+      {tasks.length > 0 && (
+        <div style={{ display:'flex', flexWrap:'wrap', gap:'5px' }}>
+          {tasks.map((t,i) => (
+            <span key={i} style={{ fontFamily:'monospace', fontSize:'9px', padding:'2px 8px', borderRadius:'20px', background: t.concluida ? `${D.green}15` : `${D.yellow}15`, color: t.concluida ? D.green : D.yellow, border:`1px solid ${t.concluida ? D.green : D.yellow}33`, textDecoration: t.concluida ? 'line-through' : 'none' }}>{t.texto}</span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── CARD FILA ─────────────────────────────────────────────────────────────────
+function CardFila({ m, idx, accent, D }) {
+  const tasks = m.tarefas || [];
+  const isPrio = m.prioridade === true;
+  return (
+    <div style={{ background:D.card, border:`1.5px solid ${isPrio ? D.yellow+'44' : accent+'22'}`, borderRadius:'11px', padding:'12px 16px', display:'flex', alignItems:'center', gap:'14px' }}>
+      <div style={{ width:'30px', height:'30px', borderRadius:'50%', border:`2px solid ${isPrio ? D.yellow : accent}`, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'Orbitron',monospace", fontSize:'12px', fontWeight:800, color: isPrio ? D.yellow : accent, flexShrink:0 }}>{idx+1}</div>
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ display:'flex', alignItems:'baseline', gap:'8px', flexWrap:'wrap' }}>
+          {isPrio && <Flag size={10} color={D.yellow}/>}
+          <span style={{ fontFamily:"'Orbitron',monospace", fontSize:'13px', fontWeight:700, color:D.text }}>{m.modelo}</span>
+          <span style={{ fontFamily:'monospace', fontSize:'9px', color:D.muted }}>{m.serie}</span>
+        </div>
+        {tasks.length > 0 && (
+          <div style={{ display:'flex', flexWrap:'wrap', gap:'4px', marginTop:'4px' }}>
+            {tasks.map((t,i) => <span key={i} style={{ fontFamily:'monospace', fontSize:'8px', padding:'1px 7px', borderRadius:'20px', background:`${accent}13`, color:accent, border:`1px solid ${accent}25` }}>{t.texto}</span>)}
+          </div>
+        )}
+      </div>
+      <div style={{ textAlign:'right', flexShrink:0 }}>
+        {m.previsao_inicio ? (
+          <>
+            <div style={{ fontFamily:'monospace', fontSize:'11px', color:D.green, fontWeight:700 }}>{fmtDate(m.previsao_inicio)}</div>
+            <div style={{ fontFamily:'monospace', fontSize:'8px', color:D.muted, marginTop:'1px' }}>→ {fmtDate(m.previsao_fim)}</div>
+          </>
+        ) : (
+          <div style={{ fontFamily:'monospace', fontSize:'9px', color:D.muted }}>A agendar</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── CARD CONCLUÍDA ────────────────────────────────────────────────────────────
+function CardConcluida({ m, D }) {
+  const dt = m.dataConclusao || m.updated_date;
+  return (
+    <div style={{ background:D.card, border:`1px solid ${D.green}22`, borderRadius:'10px', padding:'11px 14px', display:'flex', justifyContent:'space-between', alignItems:'center', gap:'10px' }}>
+      <div style={{ minWidth:0 }}>
+        <div style={{ fontFamily:"'Orbitron',monospace", fontSize:'12px', fontWeight:700, color:D.text, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{m.modelo}</div>
+        <div style={{ fontFamily:'monospace', fontSize:'9px', color:D.muted, marginTop:'2px' }}>{m.serie}</div>
+      </div>
+      <div style={{ textAlign:'right', flexShrink:0 }}>
+        <div style={{ fontFamily:'monospace', fontSize:'11px', color:D.green, fontWeight:700 }}>{fmtDate(dt)}</div>
+        {m.timer_accumulated_seconds > 0 && <div style={{ fontFamily:'monospace', fontSize:'9px', color:D.muted, marginTop:'1px' }}>{fmtHMS(m.timer_accumulated_seconds)}</div>}
+      </div>
+    </div>
+  );
+}
+
+// ── SLIDE WRAPPER ─────────────────────────────────────────────────────────────
+function SlideWrap({ title, icon, color, pulse, D, count, children }) {
+  return (
+    <div style={{ flex:1, display:'flex', flexDirection:'column', gap:'16px', overflow:'hidden', minHeight:0 }}>
+      <div style={{ display:'flex', alignItems:'center', gap:'10px', flexShrink:0 }}>
+        <div style={{ color, filter:`drop-shadow(0 0 7px ${color})` }}>{icon}</div>
+        <h2 style={{ fontFamily:"'Orbitron',monospace", fontSize:'17px', fontWeight:900, letterSpacing:'0.14em', color, textShadow:`0 0 16px ${color}66`, margin:0 }}>{title}</h2>
+        {count !== undefined && <span style={{ fontFamily:"'Orbitron',monospace", fontSize:'22px', fontWeight:900, color, marginLeft:'4px' }}>{count}</span>}
+        {pulse && <div style={{ width:'8px', height:'8px', borderRadius:'50%', background:color, animation:'blink 1s ease-in-out infinite' }}/>}
+        <div style={{ flex:1, height:'1px', background:`linear-gradient(90deg,${color}44,transparent)` }}/>
       </div>
       <div style={{ flex:1, overflowY:'auto', paddingRight:'4px' }}>{children}</div>
     </div>
@@ -78,150 +250,16 @@ function SlideWrap({ title, icon, color, pulse, D, children }) {
 }
 
 function Empty({ label, D }) {
-  return <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100px', color:D.muted, fontFamily:'monospace', fontSize:'13px', letterSpacing:'0.1em' }}>{label}</div>;
+  return <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'80px', color:D.muted, fontFamily:'monospace', fontSize:'12px', letterSpacing:'0.1em' }}>{label}</div>;
 }
 
-// ── Card: EM ANDAMENTO ────────────────────────────────────────────────────────
-function CardAndamento({ m, D }) {
-  const elapsed = useLiveTimer(m);
-  const running = m.timer_status === 'running';
-  const tasks = m.tarefas || [];
-  const done = tasks.filter(t => t.concluida).length;
-  const pct = tasks.length > 0 ? Math.round((done/tasks.length)*100) : 0;
-  const color = tc(m.tecnico);
-
-  return (
-    <div style={{ background:D.card, border:`1.5px solid ${color}44`, borderRadius:'16px', padding:'20px 22px', boxShadow:`0 0 20px ${color}18`, display:'flex', flexDirection:'column', gap:'12px' }}>
-      {/* Header */}
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
-        <div>
-          <div style={{ fontFamily:"'Orbitron',monospace", fontSize:'17px', fontWeight:800, color:D.text, letterSpacing:'0.05em' }}>{m.modelo || '—'}</div>
-          <div style={{ fontFamily:'monospace', fontSize:'10px', color:D.muted, marginTop:'2px', letterSpacing:'0.08em' }}>{m.serie}</div>
-        </div>
-        <div style={{ textAlign:'right' }}>
-          <div style={{ fontFamily:'monospace', fontSize:'20px', fontWeight:700, color: running ? D.green : D.yellow, textShadow: running ? D.glow(D.green) : 'none', letterSpacing:'0.04em' }}>{fmtHMS(elapsed)}</div>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'flex-end', gap:'4px', marginTop:'2px' }}>
-            <div style={{ width:'6px', height:'6px', borderRadius:'50%', background: running ? D.green : D.yellow, animation: running ? 'dot-blink 1.2s ease-in-out infinite' : 'none' }} />
-            <span style={{ fontFamily:'monospace', fontSize:'8px', color:D.muted, letterSpacing:'0.1em' }}>{running ? 'RUNNING' : 'PAUSED'}</span>
-          </div>
-        </div>
-      </div>
-      {/* Técnico + tipo */}
-      <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
-        <div style={{ width:'26px', height:'26px', borderRadius:'50%', background:color, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'monospace', fontSize:'11px', fontWeight:700, color:'#fff' }}>{(m.tecnico||'?')[0].toUpperCase()}</div>
-        <span style={{ fontFamily:'monospace', fontSize:'11px', color:D.text, letterSpacing:'0.07em' }}>{tl(m.tecnico)}</span>
-        {m.tipo && <span style={{ marginLeft:'auto', fontFamily:'monospace', fontSize:'8px', padding:'2px 7px', borderRadius:'20px', background:`${D.blue}18`, color:D.blue, border:`1px solid ${D.blue}33`, textTransform:'uppercase', letterSpacing:'0.1em' }}>{m.tipo}</span>}
-      </div>
-      {/* Tarefas */}
-      {tasks.length > 0 && (
-        <div style={{ display:'flex', flexDirection:'column', gap:'5px' }}>
-          {tasks.map((t,i) => (
-            <div key={i} style={{ display:'flex', alignItems:'center', gap:'7px' }}>
-              <div style={{ width:'13px', height:'13px', borderRadius:'3px', border:`1.5px solid ${t.concluida ? D.green : D.muted}`, background: t.concluida ? D.green : 'transparent', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                {t.concluida && <span style={{ color:'#000', fontSize:'8px', fontWeight:800 }}>✓</span>}
-              </div>
-              <span style={{ fontFamily:'monospace', fontSize:'11px', color: t.concluida ? D.muted : D.text, textDecoration: t.concluida ? 'line-through' : 'none' }}>{t.texto}</span>
-            </div>
-          ))}
-          <div style={{ marginTop:'3px' }}>
-            <div style={{ height:'3px', borderRadius:'2px', background:`${D.muted}28`, overflow:'hidden' }}>
-              <div style={{ height:'100%', width:`${pct}%`, background:`linear-gradient(90deg,${D.pink},${D.blue})`, transition:'width 0.5s ease' }} />
-            </div>
-            <div style={{ fontFamily:'monospace', fontSize:'8px', color:D.muted, marginTop:'2px', textAlign:'right' }}>{done}/{tasks.length} TAREFAS · {pct}%</div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Card: URGÊNCIA ────────────────────────────────────────────────────────────
-function CardUrgencia({ m, D }) {
-  const elapsed = useLiveTimer(m);
-  const tasks = m.tarefas || [];
-  return (
-    <div style={{ background:D.card, border:`2px solid ${D.red}`, borderRadius:'16px', padding:'20px 22px', animation:'urgencia-pulse 2s ease-in-out infinite', display:'flex', flexDirection:'column', gap:'12px' }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <div>
-          <div style={{ display:'flex', alignItems:'center', gap:'7px' }}>
-            <AlertTriangle size={15} color={D.red} />
-            <span style={{ fontFamily:"'Orbitron',monospace", fontSize:'17px', fontWeight:800, color:D.red }}>{m.modelo}</span>
-          </div>
-          <div style={{ fontFamily:'monospace', fontSize:'10px', color:D.muted, marginTop:'2px' }}>{m.serie}</div>
-        </div>
-        <div style={{ fontFamily:'monospace', fontSize:'18px', color:D.red, fontWeight:700 }}>{fmtHMS(elapsed)}</div>
-      </div>
-      {tasks.length > 0 && (
-        <div style={{ display:'flex', flexWrap:'wrap', gap:'5px' }}>
-          {tasks.map((t,i) => <span key={i} style={{ fontFamily:'monospace', fontSize:'10px', padding:'2px 9px', borderRadius:'20px', background:`${D.red}18`, color:D.red, border:`1px solid ${D.red}33` }}>{t.texto}</span>)}
-        </div>
-      )}
-      <div style={{ fontFamily:'monospace', fontSize:'9px', color:D.muted }}>Entrada: {fmtDate(m.dataAtribuicao || m.created_date)}</div>
-    </div>
-  );
-}
-
-// ── Card: FILA ────────────────────────────────────────────────────────────────
-function CardFila({ m, idx, color, D }) {
-  const tasks = m.tarefas || [];
-  return (
-    <div style={{ background:D.card, border:`1.5px solid ${color}28`, borderRadius:'13px', padding:'14px 18px', display:'flex', alignItems:'center', gap:'14px' }}>
-      <div style={{ width:'34px', height:'34px', borderRadius:'50%', border:`2px solid ${color}`, display:'flex', alignItems:'center', justifyContent:'center', fontFamily:"'Orbitron',monospace", fontSize:'13px', fontWeight:800, color, flexShrink:0 }}>{idx+1}</div>
-      <div style={{ flex:1, minWidth:0 }}>
-        <div style={{ display:'flex', alignItems:'baseline', gap:'9px', flexWrap:'wrap' }}>
-          <span style={{ fontFamily:"'Orbitron',monospace", fontSize:'14px', fontWeight:700, color:D.text }}>{m.modelo}</span>
-          <span style={{ fontFamily:'monospace', fontSize:'10px', color:D.muted }}>{m.serie}</span>
-        </div>
-        {tasks.length > 0 && (
-          <div style={{ display:'flex', flexWrap:'wrap', gap:'4px', marginTop:'5px' }}>
-            {tasks.map((t,i) => <span key={i} style={{ fontFamily:'monospace', fontSize:'9px', padding:'2px 7px', borderRadius:'20px', background:`${color}14`, color, border:`1px solid ${color}28` }}>{t.texto}</span>)}
-          </div>
-        )}
-      </div>
-      <div style={{ textAlign:'right', flexShrink:0 }}>
-        {m.previsao_inicio ? (
-          <>
-            <div style={{ fontFamily:'monospace', fontSize:'12px', color:D.green, fontWeight:700 }}>{fmtDate(m.previsao_inicio)}</div>
-            <div style={{ fontFamily:'monospace', fontSize:'8px', color:D.muted, marginTop:'2px' }}>até {fmtDate(m.previsao_fim)}</div>
-          </>
-        ) : (
-          <div style={{ fontFamily:'monospace', fontSize:'10px', color:D.muted }}>A agendar</div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Card: CONCLUÍDA ───────────────────────────────────────────────────────────
-function CardConcluida({ m, D }) {
-  return (
-    <div style={{ background:D.card, border:`1px solid ${D.green}28`, borderRadius:'10px', padding:'10px 14px' }}>
-      <div style={{ fontFamily:"'Orbitron',monospace", fontSize:'12px', fontWeight:700, color:D.text }}>{m.modelo}</div>
-      <div style={{ fontFamily:'monospace', fontSize:'9px', color:D.muted, marginTop:'2px' }}>{m.serie}</div>
-      {(m.timer_accumulated_seconds > 0) && <div style={{ fontFamily:'monospace', fontSize:'9px', color:D.green, marginTop:'4px' }}>{fmtHMS(m.timer_accumulated_seconds)}</div>}
-    </div>
-  );
-}
-
-// ── Relógio ───────────────────────────────────────────────────────────────────
-function LiveClock({ D }) {
-  const [now, setNow] = useState(new Date());
-  useEffect(() => { const id = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(id); }, []);
-  return (
-    <div style={{ textAlign:'right' }}>
-      <div style={{ fontFamily:"'Orbitron',monospace", fontSize:'15px', fontWeight:700, color:D.text, letterSpacing:'0.08em' }}>{now.toLocaleTimeString('pt-PT')}</div>
-      <div style={{ fontFamily:'monospace', fontSize:'8px', color:D.muted, letterSpacing:'0.06em', textTransform:'uppercase' }}>{now.toLocaleDateString('pt-PT',{weekday:'short',day:'2-digit',month:'short'})}</div>
-    </div>
-  );
-}
-
-// ── SLIDES ────────────────────────────────────────────────────────────────────
+// ── SLIDES config ─────────────────────────────────────────────────────────────
 const SLIDES = [
-  { id:'andamento',  label:'EM ANDAMENTO', duration:10000 },
-  { id:'urgencias',  label:'URGÊNCIAS',    duration:8000  },
-  { id:'fila_acp',   label:'FILA ACP',     duration:10000 },
-  { id:'fila_nts',   label:'FILA NTS',     duration:10000 },
-  { id:'concluidas', label:'CONCLUÍDAS',   duration:10000 },
+  { id:'andamento',  label:'EM ANDAMENTO' },
+  { id:'prioritarias', label:'PRIORITÁRIAS' },
+  { id:'fila_acp',   label:'FILA ACP'     },
+  { id:'fila_nts',   label:'NTS'          },
+  { id:'concluidas', label:'CONCLUÍDAS'   },
 ];
 
 // ── MAIN ──────────────────────────────────────────────────────────────────────
@@ -237,200 +275,236 @@ export default function AoVivo() {
   const [progress, setProgress] = useState(0);
   const [paused, setPaused] = useState(false);
 
-  const timerRef = useRef(null);
-  const progRef = useRef(null);
-  const startRef = useRef(Date.now());
-  const pausedAtRef = useRef(null);
+  const startRef   = useRef(Date.now());
+  const timerRef   = useRef(null);
+  const progRef    = useRef(null);
 
-  // Fetch via bridge (mesma fonte da Produção)
   const fetchData = useCallback(async () => {
     try {
       const data = await callBridge({ action:'list', entity:'FrotaACP' });
       setMachines((data || []).filter(m => !m.arquivada));
-    } catch(e) { console.warn('AoVivo fetch:', e); }
+    } catch(e) { console.warn(e); }
     finally { setLoading(false); }
   }, []);
 
   useEffect(() => { fetchData(); const id = setInterval(fetchData, 30000); return () => clearInterval(id); }, [fetchData]);
 
-  // Carrossel
-  const advance = useCallback(() => {
-    setSlide(s => (s+1) % SLIDES.length);
+  const goTo = useCallback((idx) => {
+    setSlide(idx);
     setProgress(0);
     startRef.current = Date.now();
   }, []);
 
+  const next = useCallback(() => goTo((slide + 1) % SLIDES.length), [slide, goTo]);
+  const prev = useCallback(() => goTo((slide - 1 + SLIDES.length) % SLIDES.length), [slide, goTo]);
+
+  // Auto-advance
   useEffect(() => {
-    if (paused) {
-      clearTimeout(timerRef.current); clearInterval(progRef.current);
-      pausedAtRef.current = Date.now(); return;
-    }
-    if (pausedAtRef.current) { startRef.current += Date.now() - pausedAtRef.current; pausedAtRef.current = null; }
-    const dur = SLIDES[slide].duration;
-    const remaining = dur - (Date.now() - startRef.current);
-    timerRef.current = setTimeout(advance, Math.max(remaining, 0));
-    progRef.current = setInterval(() => setProgress(Math.min((Date.now() - startRef.current) / dur, 1)), 50);
+    if (paused) { clearTimeout(timerRef.current); clearInterval(progRef.current); return; }
+    timerRef.current = setTimeout(next, SLIDE_DURATION - (Date.now() - startRef.current));
+    progRef.current  = setInterval(() => setProgress(Math.min((Date.now() - startRef.current) / SLIDE_DURATION, 1)), 100);
     return () => { clearTimeout(timerRef.current); clearInterval(progRef.current); };
-  }, [slide, paused, advance]);
+  }, [slide, paused, next]);
 
-  // Filtros — espelham exatamente o que está na aba Produção
-  const andamento  = machines.filter(m => m.estado?.startsWith('em-preparacao'));
-  const urgentes   = machines.filter(m => m.prioridade === true);
-  const aFazer     = machines.filter(m => m.estado === 'a-fazer');
-  const filaACP    = aFazer.filter(m => m.tipo !== 'nova');
-  const filaNTS    = aFazer.filter(m => m.tipo === 'nova');
-  const concluidas = machines.filter(m => m.estado?.startsWith('concluida') || m.estado === 'concluida');
-  const weekAgo    = Date.now() - 7*24*3600*1000;
-  const semana     = concluidas.filter(m => new Date(m.dataConclusao || m.updated_date).getTime() > weekAgo);
+  // ── Filtros fiéis aos dados reais ──
+  const notArchived = machines.filter(m => !m.arquivada);
 
-  const slideContent = {
+  // Em andamento = qualquer estado em-preparacao
+  const andamento = notArchived.filter(m => m.estado?.startsWith('em-preparacao'));
+
+  // Prioritárias activas = prioridade=true E não concluída
+  const prioritarias = notArchived.filter(m =>
+    m.prioridade === true &&
+    !m.estado?.startsWith('concluida') &&
+    m.estado !== 'concluida'
+  );
+
+  // Fila ACP = a-fazer E tipo != nova
+  const filaACP = notArchived.filter(m => m.estado === 'a-fazer' && m.tipo !== 'nova');
+
+  // NTS = tipo nova, em andamento OU a-fazer
+  const ntsAndamento = notArchived.filter(m => m.tipo === 'nova' && m.estado?.startsWith('em-preparacao'));
+  const ntsAfazer    = notArchived.filter(m => m.tipo === 'nova' && m.estado === 'a-fazer');
+
+  // Concluídas esta semana = desde segunda-feira
+  const hoje = new Date();
+  const segunda = new Date(hoje);
+  segunda.setHours(0,0,0,0);
+  segunda.setDate(hoje.getDate() - hoje.getDay() === 0 ? 6 : hoje.getDay() - 1);
+  // Cálculo correcto da segunda
+  const dow = hoje.getDay(); // 0=Dom,1=Seg,...
+  const diasParaSegunda = dow === 0 ? 6 : dow - 1;
+  segunda.setDate(hoje.getDate() - diasParaSegunda);
+  segunda.setHours(0,0,0,0);
+
+  const concluiSemana = notArchived.filter(m => {
+    if (!m.estado?.startsWith('concluida') && m.estado !== 'concluida') return false;
+    const raw = m.dataConclusao || m.updated_date;
+    if (!raw) return false;
+    return new Date(raw) >= segunda;
+  });
+
+  // Total concluídas = tudo com estado concluida
+  const totalConcluidas = notArchived.filter(m => m.estado?.startsWith('concluida') || m.estado === 'concluida');
+
+  // ── Slide content ──
+  const slides = {
     andamento: (
-      <SlideWrap title="EM ANDAMENTO" icon={<Activity size={20}/>} color={D.blue} D={D}>
+      <SlideWrap title="EM ANDAMENTO" icon={<Activity size={19}/>} color={D.blue} D={D} count={andamento.length}>
         {andamento.length === 0 ? <Empty label="Nenhuma máquina em produção" D={D}/> :
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(290px,1fr))', gap:'16px' }}>
-            {andamento.map(m => <CardAndamento key={m.id} m={m} D={D}/>)}
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:'14px' }}>
+            {andamento.map(m => <CardAndamento key={m.id} m={m} D={D} accent={D.blue}/>)}
           </div>}
       </SlideWrap>
     ),
-    urgencias: (
-      <SlideWrap title="URGÊNCIAS" icon={<AlertTriangle size={20}/>} color={D.red} D={D} pulse>
-        {urgentes.length === 0 ? <Empty label="Sem urgências activas ✓" D={D}/> :
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(290px,1fr))', gap:'16px' }}>
-            {urgentes.map(m => <CardUrgencia key={m.id} m={m} D={D}/>)}
-          </div>}
+    prioritarias: (
+      <SlideWrap title="PRIORITÁRIAS" icon={<Flag size={19}/>} color={D.yellow} D={D} count={prioritarias.length} pulse>
+        {prioritarias.length === 0
+          ? <Empty label="Sem máquinas prioritárias activas ✓" D={D}/>
+          : <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:'14px' }}>
+              {prioritarias.map(m => <CardPrio key={m.id} m={m} D={D}/>)}
+            </div>}
       </SlideWrap>
     ),
     fila_acp: (
-      <SlideWrap title="PRÓXIMAS — ACP" icon={<ListOrdered size={20}/>} color={D.blue} D={D}>
+      <SlideWrap title="FILA — ACP" icon={<ListOrdered size={19}/>} color={D.blue} D={D} count={filaACP.length}>
         {filaACP.length === 0 ? <Empty label="Fila ACP vazia" D={D}/> :
-          <div style={{ display:'flex', flexDirection:'column', gap:'9px' }}>
-            {filaACP.map((m,i) => <CardFila key={m.id} m={m} idx={i} color={D.blue} D={D}/>)}
+          <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
+            {filaACP.map((m,i) => <CardFila key={m.id} m={m} idx={i} accent={D.blue} D={D}/>)}
           </div>}
       </SlideWrap>
     ),
     fila_nts: (
-      <SlideWrap title="PRÓXIMAS — NTS" icon={<ListOrdered size={20}/>} color={D.pink} D={D}>
-        {filaNTS.length === 0 ? <Empty label="Fila NTS vazia" D={D}/> :
-          <div style={{ display:'flex', flexDirection:'column', gap:'9px' }}>
-            {filaNTS.map((m,i) => <CardFila key={m.id} m={m} idx={i} color={D.pink} D={D}/>)}
-          </div>}
+      <SlideWrap title="NTS" icon={<ListOrdered size={19}/>} color={D.pink} D={D} count={ntsAndamento.length + ntsAfazer.length}>
+        {(ntsAndamento.length + ntsAfazer.length) === 0
+          ? <Empty label="Sem máquinas NTS" D={D}/>
+          : <>
+              {ntsAndamento.length > 0 && (
+                <>
+                  <div style={{ fontFamily:'monospace', fontSize:'9px', letterSpacing:'0.12em', color:D.green, marginBottom:'8px', marginTop:'2px' }}>▶ EM ANDAMENTO</div>
+                  <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:'10px', marginBottom:'18px' }}>
+                    {ntsAndamento.map(m => <CardAndamento key={m.id} m={m} D={D} accent={D.pink}/>)}
+                  </div>
+                </>
+              )}
+              {ntsAfazer.length > 0 && (
+                <>
+                  <div style={{ fontFamily:'monospace', fontSize:'9px', letterSpacing:'0.12em', color:D.muted, marginBottom:'8px' }}>⏳ A FAZER</div>
+                  <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
+                    {ntsAfazer.map((m,i) => <CardFila key={m.id} m={m} idx={i} accent={D.pink} D={D}/>)}
+                  </div>
+                </>
+              )}
+            </>}
       </SlideWrap>
     ),
     concluidas: (
-      <SlideWrap title="CONCLUÍDAS — ESTA SEMANA" icon={<CheckCircle2 size={20}/>} color={D.green} D={D}>
-        {semana.length === 0 ? <Empty label="Sem conclusões esta semana" D={D}/> : (() => {
-          const byTech = {};
-          semana.forEach(m => { const t = m.tecnico||'outros'; if (!byTech[t]) byTech[t]=[]; byTech[t].push(m); });
-          return (
-            <div>
-              {Object.entries(byTech).sort((a,b)=>b[1].length-a[1].length).map(([tec,macs]) => (
-                <div key={tec} style={{ marginBottom:'18px' }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:'10px', marginBottom:'9px' }}>
-                    <div style={{ width:'28px', height:'28px', borderRadius:'50%', background:tc(tec), display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'monospace', fontSize:'12px', fontWeight:700, color:'#fff' }}>{tec[0].toUpperCase()}</div>
-                    <span style={{ fontFamily:'monospace', fontSize:'12px', color:D.text, fontWeight:700, letterSpacing:'0.07em' }}>{tl(tec)}</span>
-                    <span style={{ marginLeft:'auto', fontFamily:"'Orbitron',monospace", fontSize:'18px', fontWeight:900, color:D.green }}>{macs.length}</span>
-                  </div>
-                  <div style={{ display:'flex', flexWrap:'wrap', gap:'7px' }}>
-                    {macs.map(m => <CardConcluida key={m.id} m={m} D={D}/>)}
-                  </div>
-                </div>
-              ))}
-              <div style={{ textAlign:'right', fontFamily:"'Orbitron',monospace", fontSize:'12px', color:D.muted }}>
-                TOTAL: <span style={{ color:D.green, fontWeight:800 }}>{semana.length}</span> MÁQUINAS
-              </div>
-            </div>
-          );
-        })()}
+      <SlideWrap title="CONCLUÍDAS — ESTA SEMANA" icon={<CheckCircle2 size={19}/>} color={D.green} D={D} count={concluiSemana.length}>
+        {concluiSemana.length === 0
+          ? <Empty label="Nenhuma conclusão esta semana ainda" D={D}/>
+          : <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))', gap:'9px' }}>
+              {concluiSemana
+                .sort((a,b) => new Date(b.dataConclusao||b.updated_date) - new Date(a.dataConclusao||a.updated_date))
+                .map(m => <CardConcluida key={m.id} m={m} D={D}/>)}
+            </div>}
       </SlideWrap>
     ),
   };
 
   return (
-    <div style={{ minHeight:'100vh', background:D.bg, color:D.text, display:'flex', flexDirection:'column', fontFamily:'system-ui,sans-serif', userSelect:'none' }}>
+    <div style={{ minHeight:'100vh', height:'100vh', background:D.bg, color:D.text, display:'flex', flexDirection:'column', fontFamily:'system-ui,sans-serif', overflow:'hidden' }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
-        @keyframes dot-blink{0%,100%{opacity:1}50%{opacity:0.15}}
-        @keyframes urgencia-pulse{0%,100%{box-shadow:0 0 28px #EF444433}50%{box-shadow:0 0 48px #EF444477}}
-        ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#ffffff18;border-radius:2px}
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap');
+        @keyframes blink{0%,100%{opacity:1}50%{opacity:0.15}}
+        ::-webkit-scrollbar{width:4px}
+        ::-webkit-scrollbar-track{background:transparent}
+        ::-webkit-scrollbar-thumb{background:#ffffff18;border-radius:2px}
         *{box-sizing:border-box}
       `}</style>
 
       {/* ── HEADER ── */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 24px', background:D.surface, borderBottom:`1px solid ${D.border}`, flexWrap:'wrap', gap:'10px', position:'sticky', top:0, zIndex:20 }}>
-        {/* Logo + título */}
-        <div style={{ display:'flex', alignItems:'center', gap:'12px' }}>
-          <img src="https://media.base44.com/images/public/69c166ad19149fb0c07883cb/a35751fd9_Gemini_Generated_Image_scmohbscmohbscmo1.png"
-            alt="WATCHER" style={{ width:'40px', height:'40px', objectFit:'contain', filter:`drop-shadow(0 0 8px ${D.pink}88)` }}/>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 22px', background:D.surface, borderBottom:`1px solid ${D.border}`, flexShrink:0, gap:'12px', flexWrap:'wrap' }}>
+        {/* Logo */}
+        <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
+          <img src="https://media.base44.com/images/public/69c166ad19149fb0c07883cb/a35751fd9_Gemini_Generated_Image_scmohbscmohbscmo1.png" alt="" style={{ width:'36px', height:'36px', objectFit:'contain', filter:`drop-shadow(0 0 7px ${D.pink}88)` }}/>
           <div>
-            <div style={{ fontFamily:"'Orbitron',monospace", fontSize:'16px', fontWeight:900, letterSpacing:'0.15em', color:D.pink }}>
-              WATCHER <span style={{ color:D.muted, fontSize:'10px', fontWeight:400 }}>/ AO VIVO</span>
-            </div>
-            <div style={{ fontFamily:'monospace', fontSize:'8px', color:D.muted, letterSpacing:'0.12em' }}>MONITOR · AUTO-REFRESH 30s · FONTE: WATCHER</div>
+            <div style={{ fontFamily:"'Orbitron',monospace", fontSize:'14px', fontWeight:900, letterSpacing:'0.14em', color:D.pink }}>WATCHER <span style={{ color:D.muted, fontSize:'9px', fontWeight:400, letterSpacing:'0.08em' }}>/ AO VIVO</span></div>
+            <div style={{ fontFamily:'monospace', fontSize:'8px', color:D.muted, letterSpacing:'0.1em' }}>AUTO-REFRESH 30s · FONTE: WATCHER</div>
           </div>
         </div>
 
-        {/* Slide tabs */}
-        <div style={{ display:'flex', gap:'5px', flexWrap:'wrap' }}>
+        {/* Tabs */}
+        <div style={{ display:'flex', gap:'4px', flexWrap:'wrap', flex:1, justifyContent:'center' }}>
           {SLIDES.map((s,i) => (
-            <button key={s.id} onClick={() => { setSlide(i); setProgress(0); startRef.current = Date.now(); }} style={{
-              fontFamily:'monospace', fontSize:'9px', letterSpacing:'0.08em',
-              padding:'5px 12px', borderRadius:'20px', cursor:'pointer', border:'none',
-              background: i===slide ? `linear-gradient(135deg,${D.pink},${D.blue})` : `${D.muted}18`,
+            <button key={s.id} onClick={() => goTo(i)} style={{
+              fontFamily:'monospace', fontSize:'9px', letterSpacing:'0.07em',
+              padding:'5px 13px', borderRadius:'20px', cursor:'pointer', border:'none',
+              background: i===slide ? `linear-gradient(135deg,${D.pink},${D.blue})` : `${D.sub}`,
               color: i===slide ? '#fff' : D.muted,
               fontWeight: i===slide ? 700 : 400, transition:'all 0.2s',
             }}>{s.label}</button>
           ))}
         </div>
 
-        {/* Controlos direita */}
-        <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
+        {/* Direita */}
+        <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
           <LiveClock D={D}/>
-          <button onClick={() => setPaused(p=>!p)} style={{ background: paused ? `${D.yellow}18` : 'transparent', border:`1px solid ${paused ? D.yellow : D.muted+'44'}`, borderRadius:'7px', padding:'5px 10px', cursor:'pointer', fontFamily:'monospace', fontSize:'9px', color: paused ? D.yellow : D.muted, letterSpacing:'0.08em' }}>{paused ? '▶ RETOMAR' : '⏸ PAUSAR'}</button>
-          <button onClick={() => { setDark(d => !d); localStorage.setItem('theme', dark ? 'light' : 'dark'); }} style={{ background:'transparent', border:`1px solid ${D.muted}44`, borderRadius:'7px', padding:'5px 8px', cursor:'pointer', color:D.muted }}>{dark ? <Sun size={13}/> : <Moon size={13}/>}</button>
-          <div style={{ display:'flex', alignItems:'center', gap:'5px' }}>
-            <div style={{ width:'7px', height:'7px', borderRadius:'50%', background:D.green, animation:'dot-blink 1.5s ease-in-out infinite' }}/>
+          <button onClick={prev} style={{ background:'transparent', border:`1px solid ${D.sub}`, borderRadius:'6px', padding:'4px 7px', cursor:'pointer', color:D.muted, display:'flex' }}><ChevronLeft size={14}/></button>
+          <button onClick={() => setPaused(p=>!p)} style={{ background: paused ? `${D.yellow}18` : 'transparent', border:`1px solid ${paused ? D.yellow : D.sub}`, borderRadius:'6px', padding:'4px 8px', cursor:'pointer', color: paused ? D.yellow : D.muted, display:'flex', alignItems:'center', gap:'4px' }}>
+            {paused ? <Play size={12}/> : <Pause size={12}/>}
+            <span style={{ fontFamily:'monospace', fontSize:'8px', letterSpacing:'0.07em' }}>{paused ? 'RETOMAR' : 'PAUSAR'}</span>
+          </button>
+          <button onClick={next} style={{ background:'transparent', border:`1px solid ${D.sub}`, borderRadius:'6px', padding:'4px 7px', cursor:'pointer', color:D.muted, display:'flex' }}><ChevronRight size={14}/></button>
+          <button onClick={() => { setDark(d=>!d); localStorage.setItem('theme', dark ? 'light' : 'dark'); }} style={{ background:'transparent', border:`1px solid ${D.sub}`, borderRadius:'6px', padding:'4px 7px', cursor:'pointer', color:D.muted, display:'flex' }}>
+            {dark ? <Sun size={13}/> : <Moon size={13}/>}
+          </button>
+          <div style={{ display:'flex', alignItems:'center', gap:'4px' }}>
+            <div style={{ width:'6px', height:'6px', borderRadius:'50%', background:D.green, animation:'blink 1.5s ease-in-out infinite' }}/>
             <span style={{ fontFamily:'monospace', fontSize:'8px', color:D.muted }}>LIVE</span>
           </div>
         </div>
       </div>
 
-      {/* PROGRESS BAR */}
-      <div style={{ height:'2px', background:`${D.muted}18` }}>
-        <div style={{ height:'100%', width:`${progress*100}%`, background:`linear-gradient(90deg,${D.pink},${D.blue})`, transition:'width 0.05s linear' }}/>
+      {/* PROGRESS */}
+      <div style={{ height:'2px', background:`${D.sub}`, flexShrink:0 }}>
+        <div style={{ height:'100%', width:`${progress*100}%`, background:`linear-gradient(90deg,${D.pink},${D.blue})`, transition:'width 0.1s linear' }}/>
       </div>
 
       {/* KPI BAR */}
-      <div style={{ display:'flex', gap:'1px', background:D.border, borderBottom:`1px solid ${D.border}` }}>
+      <div style={{ display:'flex', gap:'1px', background:D.border, borderBottom:`1px solid ${D.border}`, flexShrink:0 }}>
         {[
-          { label:'EM PRODUÇÃO', value:andamento.length, color:D.blue },
-          { label:'URGÊNCIAS',   value:urgentes.length,  color:D.red  },
-          { label:'NA FILA',     value:aFazer.length,    color:D.yellow },
-          { label:'ESTA SEMANA', value:semana.length,    color:D.green },
-          { label:'TOTAL 2026',  value:concluidas.length, color:D.pink },
+          { label:'EM ANDAMENTO',  value: andamento.length,      color: D.blue  },
+          { label:'PRIORITÁRIAS',  value: prioritarias.length,   color: D.yellow},
+          { label:'FILA ACP',      value: filaACP.length,        color: D.muted },
+          { label:'NTS ACTIVAS',   value: ntsAndamento.length + ntsAfazer.length, color: D.pink },
+          { label:'ESTA SEMANA',   value: concluiSemana.length,  color: D.green },
+          { label:'TOTAL 2026',    value: totalConcluidas.length, color: D.purple},
         ].map(k => (
-          <div key={k.label} style={{ flex:1, background:D.surface, padding:'9px 12px', display:'flex', flexDirection:'column', alignItems:'center', gap:'2px' }}>
-            <div style={{ fontFamily:"'Orbitron',monospace", fontSize:'22px', fontWeight:900, color:k.color, textShadow: dark ? `0 0 14px ${k.color}55` : 'none' }}>{loading ? '…' : k.value}</div>
-            <div style={{ fontFamily:'monospace', fontSize:'8px', color:D.muted, letterSpacing:'0.1em' }}>{k.label}</div>
+          <div key={k.label} style={{ flex:1, background:D.surface, padding:'8px 10px', display:'flex', flexDirection:'column', alignItems:'center', gap:'2px' }}>
+            <div style={{ fontFamily:"'Orbitron',monospace", fontSize:'20px', fontWeight:900, color:k.color }}>{loading ? '…' : k.value}</div>
+            <div style={{ fontFamily:'monospace', fontSize:'7px', color:D.muted, letterSpacing:'0.09em', textAlign:'center' }}>{k.label}</div>
           </div>
         ))}
       </div>
 
-      {/* SLIDE CONTENT */}
-      <div style={{ flex:1, padding:'24px 28px', display:'flex', flexDirection:'column', overflow:'hidden' }} onClick={() => setPaused(p=>!p)}>
-        {loading ? (
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'center', flex:1 }}>
-            <div style={{ fontFamily:"'Orbitron',monospace", fontSize:'14px', color:D.muted, animation:'dot-blink 1s ease-in-out infinite' }}>A CARREGAR DADOS DO WATCHER...</div>
-          </div>
-        ) : slideContent[SLIDES[slide].id]}
+      {/* CONTENT */}
+      <div style={{ flex:1, padding:'20px 24px', display:'flex', flexDirection:'column', overflow:'hidden', minHeight:0 }}>
+        {loading
+          ? <div style={{ display:'flex', alignItems:'center', justifyContent:'center', flex:1 }}>
+              <span style={{ fontFamily:"'Orbitron',monospace", fontSize:'13px', color:D.muted, animation:'blink 1s ease-in-out infinite' }}>A CARREGAR...</span>
+            </div>
+          : slides[SLIDES[slide].id]}
       </div>
 
       {/* FOOTER */}
-      <div style={{ padding:'7px 24px', background:D.surface, borderTop:`1px solid ${D.border}`, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+      <div style={{ padding:'6px 22px', background:D.surface, borderTop:`1px solid ${D.border}`, display:'flex', justifyContent:'space-between', alignItems:'center', flexShrink:0 }}>
         <div style={{ display:'flex', gap:'5px' }}>
-          {SLIDES.map((_,i) => <div key={i} style={{ width: i===slide ? '22px' : '7px', height:'3px', borderRadius:'2px', background: i===slide ? `linear-gradient(90deg,${D.pink},${D.blue})` : `${D.muted}33`, transition:'width 0.3s ease' }}/>)}
+          {SLIDES.map((_,i) => (
+            <button key={i} onClick={() => goTo(i)} style={{ width: i===slide ? '20px' : '7px', height:'3px', borderRadius:'2px', background: i===slide ? `linear-gradient(90deg,${D.pink},${D.blue})` : `${D.sub}`, border:'none', cursor:'pointer', transition:'width 0.3s ease', padding:0 }}/>
+          ))}
         </div>
-        <div style={{ fontFamily:'monospace', fontSize:'8px', color:D.muted, letterSpacing:'0.1em' }}>
-          {SLIDES[slide].label} · {slide+1}/{SLIDES.length} · CLIQUE PARA {paused ? 'RETOMAR' : 'PAUSAR'}
+        <div style={{ fontFamily:'monospace', fontSize:'8px', color:D.muted, letterSpacing:'0.08em' }}>
+          ‹ › NAVEGAR · ESPAÇO PAUSAR · {slide+1}/{SLIDES.length}
         </div>
         <div style={{ fontFamily:'monospace', fontSize:'8px', color:D.muted }}>STILL OFICINA · PORTAL DA FROTA ACP</div>
       </div>
