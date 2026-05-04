@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Activity, Flag, CheckCircle2, ListOrdered, Sun, Moon,
-         ChevronLeft, ChevronRight, Pause, Play, Wrench } from "lucide-react";
+         ChevronLeft, ChevronRight, Pause, Play, Wrench, CalendarDays } from "lucide-react";
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const BRIDGE_URL    = "https://watcherweb.base44.app/api/functions/saganBridge";
@@ -505,6 +505,7 @@ function Empty({label,D}){
 const SLIDES=[
   {id:"andamento",    label:"EM ANDAMENTO"},
   {id:"prioritarias", label:"PRIORITÁRIAS"},
+  {id:"timeline",     label:"TIMELINE"},
   {id:"fila_acp",     label:"FILA ACP"},
   {id:"nts",          label:"NTS"},
   {id:"recon",        label:"RECOND."},
@@ -619,6 +620,16 @@ export default function AoVivo(){
           </div>}
       </div>
     ),
+    timeline:(
+      <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
+        <SlideHead title="TIMELINE · 14 DIAS" icon={<CalendarDays size={16}/>} color={D.pink} D={D}
+          count={machines.filter(m=>(m.estado?.startsWith("em-preparacao")||m.estado==="a-fazer")&&m.previsao_inicio).length}/>
+        <GanttChart machines={[
+          ...machines.filter(m=>m.estado?.startsWith("em-preparacao")&&m.previsao_inicio),
+          ...machines.filter(m=>m.estado==="a-fazer"&&m.previsao_inicio),
+        ]} D={D}/>
+      </div>
+    ),
     concluidas:(
       <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
         <SlideHead title="CONCLUÍDAS — ESTA SEMANA" icon={<CheckCircle2 size={16}/>} color={D.green} D={D} count={conSemana.length}/>
@@ -635,6 +646,7 @@ export default function AoVivo(){
   const kpis=[
     {l:"ANDAMENTO",   v:andamento.length,            c:D.blue  },
     {l:"PRIORITÁRIAS",v:prioritarias.length,         c:D.yellow},
+    {l:"TIMELINE",    v:machines.filter(m=>(m.estado?.startsWith("em-preparacao")||m.estado==="a-fazer")&&m.previsao_inicio).length, c:D.pink},
     {l:"FILA ACP",    v:filaACP.length,               c:D.muted },
     {l:"NTS",         v:ntsAnd.length+ntsAF.length,  c:D.pink  },
     {l:"RECON",       v:reconAnd.length+reconAF.length,c:D.purple},

@@ -239,11 +239,11 @@ function MachineActiveCard({ machine, isACP2, hasExpress }) {
             {running && !overrun && <StatusPill color="green">EM CURSO</StatusPill>}
             {!hasPrevisao && <StatusPill color="muted">SEM PREVISÃO</StatusPill>}
           </div>
-          <div className="watcher-title truncate" style={{ fontSize: '18px', fontWeight: 700, color: 'var(--cyber-text)' }}>
-            {machine.modelo || "—"}
+          <div className="watcher-title truncate" style={{ fontSize: '17px', fontWeight: 900, color: '#4D9FFF', letterSpacing: '0.06em', textShadow: '0 0 10px rgba(77,159,255,0.5)' }}>
+            {machine.serie || "—"}
           </div>
-          <div className="font-mono-cyber" style={{ fontSize: '10px', color: 'var(--cyber-muted)', letterSpacing: '0.1em', marginTop: '2px' }}>
-            #{machine.serie || "—"} {machine.ano ? `· ${machine.ano}` : ''} {machine.tipo ? `· ${machine.tipo}` : ''}
+          <div className="font-mono-cyber" style={{ fontSize: '11px', color: 'var(--cyber-text)', letterSpacing: '0.05em', marginTop: '2px', opacity: 0.7 }}>
+            {machine.modelo || "—"} {machine.ano ? `· ${machine.ano}` : ''} {machine.tipo ? `· ${machine.tipo}` : ''}
           </div>
         </div>
         <div className="font-mono-cyber text-right shrink-0" style={{ fontSize: '10px', color: 'var(--cyber-muted)', letterSpacing: '0.1em' }}>
@@ -363,11 +363,11 @@ function MachineQueueRow({ machine, position, isACP2, hasExpress }) {
           {isACP2 && <StatusPill color="amber">ACP2</StatusPill>}
           {!inicio && <StatusPill color="muted">SEM PREVISÃO</StatusPill>}
         </div>
-        <div className="watcher-title truncate" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--cyber-text)' }}>
-          {machine.modelo || "—"}
+        <div className="watcher-title truncate" style={{ fontSize: '14px', fontWeight: 900, color: '#4D9FFF', letterSpacing: '0.06em', textShadow: '0 0 8px rgba(77,159,255,0.45)' }}>
+          {machine.serie || "—"}
         </div>
-        <div className="font-mono-cyber truncate" style={{ fontSize: '10px', color: 'var(--cyber-muted)', letterSpacing: '0.08em' }}>
-          #{machine.serie || "—"} {totalDias ? `· ${totalDias}d previstos` : ''}
+        <div className="font-mono-cyber truncate" style={{ fontSize: '10px', color: 'var(--cyber-text)', opacity: 0.65, letterSpacing: '0.06em' }}>
+          {machine.modelo || "—"} {totalDias ? `· ${totalDias}d previstos` : ''}
         </div>
       </div>
 
@@ -398,11 +398,11 @@ function MachineDoneRow({ machine, isACP2 }) {
     <div className="cyber-card p-3 clip-cyber-sm flex items-center gap-3" style={{ borderColor: 'rgba(34,197,94,0.35)' }}>
       <CheckCircle2 className="w-5 h-5 shrink-0" style={{ color: '#22C55E', filter: 'drop-shadow(0 0 6px rgba(34,197,94,0.6))' }} />
       <div className="flex-1 min-w-0">
-        <div className="watcher-title truncate" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--cyber-text)' }}>
-          {machine.modelo || "—"} {isACP2 && <span style={{ color: '#F59E0B', fontSize: '10px', marginLeft: '4px' }}>[ACP2]</span>}
+        <div className="watcher-title truncate" style={{ fontSize: '14px', fontWeight: 900, color: '#22C55E', letterSpacing: '0.06em', textShadow: '0 0 8px rgba(34,197,94,0.45)' }}>
+          {machine.serie || "—"} {isACP2 && <span style={{ color: '#F59E0B', fontSize: '9px', fontWeight: 700, marginLeft: '6px' }}>[ACP2]</span>}
         </div>
-        <div className="font-mono-cyber truncate" style={{ fontSize: '10px', color: 'var(--cyber-muted)', letterSpacing: '0.08em' }}>
-          #{machine.serie || "—"} {fim ? `· entregue ${formatDateShort(fim)}` : ''}
+        <div className="font-mono-cyber truncate" style={{ fontSize: '10px', color: 'var(--cyber-text)', opacity: 0.65, letterSpacing: '0.06em' }}>
+          {machine.modelo || "—"} {fim ? `· entregue ${formatDateShort(fim)}` : ''}
         </div>
       </div>
       <div className="timer-display shrink-0" style={{ color: '#22C55E', fontSize: '13px', fontWeight: 700, textShadow: '0 0 8px rgba(34,197,94,0.5)' }}>
@@ -432,7 +432,9 @@ function DayTimeline({ activeMachines, queueMachines }) {
     const overrun = startOfDay(new Date()) > startOfDay(fim);
     blocks.push({
       id: m.id,
-      label: m.modelo,
+      label: m.serie || m.modelo,
+      nsLabel: m.serie,
+      modeloLabel: m.modelo,
       startMs: inicio.getTime(),
       endMs: fim.getTime(),
       kind: 'active',
@@ -444,7 +446,9 @@ function DayTimeline({ activeMachines, queueMachines }) {
     if (!inicio || !fim) continue;
     blocks.push({
       id: m.id,
-      label: m.modelo,
+      label: m.serie || m.modelo,
+      nsLabel: m.serie,
+      modeloLabel: m.modelo,
       startMs: inicio.getTime(),
       endMs: fim.getTime(),
       kind: 'queue',
@@ -552,7 +556,7 @@ function DayTimeline({ activeMachines, queueMachines }) {
           return (
             <div
               key={b.id + '-' + idx}
-              title={`${b.label} · ${formatDateLong(new Date(b.startMs))} → ${formatDateLong(new Date(b.endMs))}`}
+              title={`${b.nsLabel||b.label} · ${b.modeloLabel||''} · ${formatDateLong(new Date(b.startMs))} → ${formatDateLong(new Date(b.endMs))}`}
               style={{
                 position: 'absolute',
                 left: `${left}%`,
@@ -576,7 +580,7 @@ function DayTimeline({ activeMachines, queueMachines }) {
                 zIndex: 2,
               }}
             >
-              {b.label}
+              <span style={{fontFamily:"'Orbitron',monospace",fontSize:'9px',fontWeight:900,letterSpacing:'0.06em'}}>{b.nsLabel||b.label}</span>{b.modeloLabel && b.nsLabel && <span style={{fontSize:'7px',opacity:0.6,marginLeft:'4px'}}>{b.modeloLabel}</span>}
             </div>
           );
         })}
