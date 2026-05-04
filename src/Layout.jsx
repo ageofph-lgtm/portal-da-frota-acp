@@ -46,6 +46,7 @@ export default function Layout({ children, currentPageName }) {
     { page: "Dashboard", icon: LayoutDashboard, label: "DASHBOARD" },
     { page: "Producao",  icon: Kanban,          label: "PRODUÇÃO"  },
     { page: "Geral",     icon: Globe,           label: "GERAL"     },
+    { page: "AoVivo",   icon: Zap,            label: "AO VIVO"   },
     { page: "Gestao",    icon: Settings,        label: "GESTÃO"    },
   ];
 
