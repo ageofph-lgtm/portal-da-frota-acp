@@ -517,8 +517,9 @@ function GanttChart({ machines, D }) {
   const totalMs  = endDay - startDay;
   const numDays  = Math.round(totalMs / 86400000);
 
-  const pct = ms => Math.max(0, Math.min(100, ((ms - startDay.getTime()) / totalMs) * 100));
-  const nowPct = pct(Date.now());
+  // pct RAW sem clip — usamos para calcular left/width manualmente com clip correto
+  const pctRaw = ms => ((ms - startDay.getTime()) / totalMs) * 100;
+  const nowPct = Math.max(0, Math.min(100, pctRaw(Date.now())));
 
   const ruleDays = Array.from({length: numDays + 1}, (_, i) => {
     const d = new Date(startDay); d.setDate(d.getDate() + i); return d;
@@ -636,7 +637,7 @@ function GanttChart({ machines, D }) {
       </div>
 
       {/* ── Área de barras ── */}
-      <div style={{position:"relative",flex:1,overflowY:"hidden",overflowX:"hidden"}}>
+      <div style={{position:"relative",flex:1,overflow:"hidden"}}>
         {/* Grade vertical de fundo */}
         {ruleDays.map((d,i) => {
           const left = (i / numDays) * 100;
@@ -664,9 +665,15 @@ function GanttChart({ machines, D }) {
 
         {/* Barras das máquinas */}
         {blocks.map((b, idx) => {
-          const left  = pct(b.pi.getTime());
-          const right = pct(b.pf.getTime() + 86400000);
-          const width = Math.max(2, right - left);
+          // Clip correto: left e right em bruto, depois clamp para [0,100]
+          const leftRaw  = pctRaw(b.pi.getTime());
+          const rightRaw = pctRaw(b.pf.getTime() + 86400000);
+          const leftC    = Math.max(0, Math.min(100, leftRaw));
+          const rightC   = Math.max(0, Math.min(100, rightRaw));
+          const left  = leftC;
+          const width = Math.max(0.8, rightC - leftC);
+          // Se a barra fica fora do range visível, saltar
+          if (rightC <= 0 || leftC >= 100) return null;
           const top   = idx * (BAR_H + GAP);
           const fmtD  = d => d.toLocaleDateString("pt-PT",{day:"2-digit",month:"2-digit"});
           return (

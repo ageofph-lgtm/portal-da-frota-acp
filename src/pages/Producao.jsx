@@ -519,7 +519,7 @@ function DayTimeline({ activeMachines, queueMachines }) {
       </div>
 
       {/* Área dos blocos */}
-      <div style={{ position: 'relative', height: `${Math.max(60, blocks.length * 22 + 16)}px`, padding: '8px 0' }}>
+      <div style={{ position: 'relative', height: `${Math.max(60, blocks.length * 22 + 16)}px`, padding: '8px 0', overflow: 'hidden' }}>
         {/* Cursor "hoje" */}
         {nowPct >= 0 && nowPct <= 100 && (
           <div
@@ -549,9 +549,12 @@ function DayTimeline({ activeMachines, queueMachines }) {
 
         {/* Blocos */}
         {blocks.map((b, idx) => {
-          const left = pctOf(b.startMs);
-          const right = pctOf(b.endMs + 86400000); // +1 dia para incluir o dia inteiro
-          const width = Math.max(1.5, right - left);
+          const leftRaw  = pctOf(b.startMs);
+          const rightRaw = pctOf(b.endMs + 86400000); // +1 dia para incluir o dia inteiro
+          if (rightRaw <= 0 || leftRaw >= 100) return null; // fora do range visível
+          const left  = Math.max(0, Math.min(100, leftRaw));
+          const right = Math.max(0, Math.min(100, rightRaw));
+          const width = Math.max(0.8, right - left);
           const top = 8 + idx * 22;
           return (
             <div
