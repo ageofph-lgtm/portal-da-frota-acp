@@ -827,12 +827,13 @@ export default function AoVivo(){
 
   useEffect(()=>{
     const h=e=>{
+      if(e.key==="Escape")navigate("/");
       if(e.key==="ArrowRight")next();
       if(e.key==="ArrowLeft")prev();
       if(e.key===" "){e.preventDefault();sPaused(p=>!p);}
     };
     window.addEventListener("keydown",h);return()=>window.removeEventListener("keydown",h);
-  },[next,prev]);
+  },[navigate,next,prev]);
 
   // ── Filtros ──────────────────────────────────────────────────────────────
   const monday=getMondayUTC();
