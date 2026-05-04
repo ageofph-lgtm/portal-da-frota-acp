@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import StatusBadge from "@/components/dashboard/StatusBadge";
 import AIImageExtractor from "@/components/gestao/AIImageExtractor";
+import PageHeader from "@/components/shared/PageHeader";
 
 const STATUSES = ["Pronta", "UTS", "Aguarda material", "Em progresso", "A começar", "Avaliar"];
 const GROUP_OPTIONS = [
@@ -213,43 +214,52 @@ export default function Gestao() {
 
   return (
     <div className="space-y-6">
-      {/* Frota Tabs */}
-      <FrotaTabs active={frota} onChange={setFrota} />
-
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Gestão de Equipamentos</h1>
-          <p className="text-sm text-slate-500 mt-1">{equipment.length} equipamentos registados — <span className="font-semibold text-[#F08100]">{frota === "acp1" ? "Frota ACP1" : "Frota ACP2"}</span></p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={openManual} className="gap-2 border-slate-200">
-            <Plus className="w-4 h-4" /> Manual
-          </Button>
-          <Button onClick={openAI} className="bg-[#F08100] hover:bg-[#d97200] text-white gap-2 shadow-md">
-            <Wand2 className="w-4 h-4" /> Adicionar com IA
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="GESTÃO"
+        subtitle={`${equipment.length} equipamentos registados · Frota ${frota.toUpperCase()}`}
+        accent="purple"
+        right={
+          <>
+            <FrotaTabs active={frota} onChange={setFrota} />
+            <Button variant="outline" onClick={openManual} className="gap-2" style={{ borderColor: 'var(--cyber-border)' }}>
+              <Plus className="w-4 h-4" /> Manual
+            </Button>
+            <button onClick={openAI} className="btn-cyber clip-cyber-sm flex items-center gap-2 px-4 py-2" style={{ fontSize: '11px' }}>
+              <Wand2 className="w-3.5 h-3.5" /> ADICIONAR COM IA
+            </button>
+          </>
+        }
+      />
 
       {/* Group selector */}
-      <div className="flex items-center gap-3">
-        <LayoutList className="w-4 h-4 text-slate-400" />
-        <span className="text-sm text-slate-500 font-medium">Agrupar por:</span>
+      <div className="cyber-card clip-cyber-sm flex items-center gap-3 p-3">
+        <LayoutList className="w-4 h-4" style={{ color: 'var(--cyber-muted)' }} />
+        <span className="col-header-cyber" style={{ color: 'var(--cyber-muted)' }}>AGRUPAR POR:</span>
         <div className="flex gap-1">
-          {GROUP_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => setGroupBy(opt.value)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                groupBy === opt.value
-                  ? "bg-[#F08100] text-white shadow-sm"
-                  : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
+          {GROUP_OPTIONS.map((opt) => {
+            const isActive = groupBy === opt.value;
+            return (
+              <button
+                key={opt.value}
+                onClick={() => setGroupBy(opt.value)}
+                className="px-3 py-1.5 transition-all"
+                style={{
+                  fontFamily: "'Rajdhani', sans-serif",
+                  fontWeight: 700,
+                  fontSize: '11px',
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: isActive ? '#fff' : 'var(--cyber-muted)',
+                  background: isActive ? 'linear-gradient(135deg, #9B5CF6, #4D9FFF)' : 'transparent',
+                  border: isActive ? '1px solid rgba(155,92,246,0.6)' : '1px solid var(--cyber-border)',
+                  boxShadow: isActive ? '0 0 14px rgba(155,92,246,0.45)' : 'none',
+                  clipPath: 'polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px)',
+                }}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 

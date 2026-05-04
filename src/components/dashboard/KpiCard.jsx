@@ -1,36 +1,75 @@
 import React from "react";
 import { motion } from "framer-motion";
 
-export default function KpiCard({ title, value, percentage, icon: Icon, color, delay = 0 }) {
-  const colorMap = {
-    slate:   { text: "text-slate-700 dark:text-slate-300",   icon: "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300",    pct: "text-slate-400 dark:text-slate-500" },
-    emerald: { text: "text-emerald-700 dark:text-emerald-400", icon: "bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400", pct: "text-emerald-500 dark:text-emerald-400" },
-    red:     { text: "text-red-700 dark:text-red-400",     icon: "bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400",         pct: "text-red-500 dark:text-red-400" },
-    amber:   { text: "text-amber-700 dark:text-amber-400",   icon: "bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400",     pct: "text-amber-500 dark:text-amber-400" },
-    blue:    { text: "text-blue-700 dark:text-blue-400",    icon: "bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400",       pct: "text-blue-500 dark:text-blue-400" },
-    teal:    { text: "text-teal-700 dark:text-teal-400",    icon: "bg-teal-100 dark:bg-teal-900/50 text-teal-600 dark:text-teal-400",       pct: "text-teal-500 dark:text-teal-400" },
-    purple:  { text: "text-purple-700 dark:text-purple-400",  icon: "bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400",   pct: "text-purple-500 dark:text-purple-400" },
-  };
+const COLOR_MAP = {
+  slate:   { c: '#9DA0BC', glow: 'rgba(157,160,188,0.45)' },
+  emerald: { c: '#22C55E', glow: 'rgba(34,197,94,0.55)' },
+  red:     { c: '#EF4444', glow: 'rgba(239,68,68,0.55)' },
+  amber:   { c: '#F59E0B', glow: 'rgba(245,158,11,0.55)' },
+  blue:    { c: '#4D9FFF', glow: 'rgba(77,159,255,0.55)' },
+  teal:    { c: '#14B8A6', glow: 'rgba(20,184,166,0.55)' },
+  purple:  { c: '#9B5CF6', glow: 'rgba(155,92,246,0.55)' },
+  pink:    { c: '#FF2D78', glow: 'rgba(255,45,120,0.55)' },
+};
 
-  const c = colorMap[color] || colorMap.slate;
+export default function KpiCard({ title, value, percentage, icon: Icon, color, delay = 0 }) {
+  const c = COLOR_MAP[color] || COLOR_MAP.blue;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay }}
-      className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700 hover:shadow-md transition-shadow"
+      className="cyber-card clip-cyber p-4 relative overflow-hidden"
     >
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">{title}</p>
+      {/* faixa lateral colorida */}
+      <div
+        style={{
+          position: 'absolute', top: 0, left: 0, bottom: 0, width: '3px',
+          background: `linear-gradient(180deg, ${c.c}, transparent)`,
+          boxShadow: `0 0 10px ${c.glow}`,
+        }}
+      />
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p
+            className="col-header-cyber"
+            style={{ color: 'var(--cyber-muted)', marginBottom: '6px' }}
+          >
+            {title}
+          </p>
           <div className="flex items-baseline gap-2">
-            <span className={`text-3xl font-bold ${c.text}`}>{value}</span>
-            <span className={`text-sm font-semibold ${c.pct}`}>({percentage})</span>
+            <span
+              className="watcher-title"
+              style={{
+                fontSize: '32px',
+                fontWeight: 900,
+                color: c.c,
+                textShadow: `0 0 12px ${c.glow}`,
+                lineHeight: 1,
+              }}
+            >
+              {value}
+            </span>
+            <span
+              className="font-mono-cyber"
+              style={{ fontSize: '11px', color: 'var(--cyber-muted)', letterSpacing: '0.08em' }}
+            >
+              ({percentage})
+            </span>
           </div>
         </div>
-        <div className={`w-12 h-12 rounded-xl ${c.icon} flex items-center justify-center`}>
-          <Icon className="w-5 h-5" />
+        <div
+          className="clip-cyber-sm flex items-center justify-center shrink-0"
+          style={{
+            width: '44px', height: '44px',
+            background: `linear-gradient(135deg, ${c.c}22, ${c.c}11)`,
+            border: `1px solid ${c.glow}`,
+            color: c.c,
+            boxShadow: `inset 0 0 12px ${c.glow}`,
+          }}
+        >
+          <Icon className="w-5 h-5" style={{ filter: `drop-shadow(0 0 5px ${c.glow})` }} />
         </div>
       </div>
     </motion.div>

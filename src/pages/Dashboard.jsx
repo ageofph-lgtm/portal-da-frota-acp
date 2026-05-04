@@ -3,12 +3,12 @@ import FrotaTabs from "@/components/dashboard/FrotaTabs";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Forklift, CheckCircle, AlertOctagon, Package, Wrench, PlayCircle, Search, Upload } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import KpiCard from "@/components/dashboard/KpiCard";
 import FleetChart from "@/components/dashboard/FleetChart";
 import EquipmentTable from "@/components/dashboard/EquipmentTable";
 import FileUploadModal from "@/components/dashboard/FileUploadModal";
+import PageHeader from "@/components/shared/PageHeader";
 
 export default function Dashboard() {
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -37,34 +37,42 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+      <div className="space-y-6">
+        <PageHeader title="DASHBOARD" subtitle={`Frota ${frota.toUpperCase()} · Estado em tempo real`} accent="pink" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {Array(7).fill(0).map((_, i) => (
-            <Skeleton key={i} className="h-28 rounded-2xl" />
+            <Skeleton key={i} className="h-28" />
           ))}
         </div>
-        <Skeleton className="h-80 rounded-2xl" />
-        <Skeleton className="h-96 rounded-2xl" />
+        <Skeleton className="h-80" />
+        <Skeleton className="h-96" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Frota Tabs + Upload Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <FrotaTabs active={frota} onChange={setFrota} />
-        <Button
-          onClick={() => setUploadOpen(true)}
-          className="bg-[#F08100] hover:bg-[#d97200] text-white gap-2 shadow-md"
-        >
-          <Upload className="w-4 h-4" />
-          Importar / Exportar
-        </Button>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="DASHBOARD"
+        subtitle={`Frota ${frota.toUpperCase()} · ${total} equipamentos · estado em tempo real`}
+        accent="pink"
+        right={
+          <>
+            <FrotaTabs active={frota} onChange={setFrota} />
+            <button
+              onClick={() => setUploadOpen(true)}
+              className="btn-cyber clip-cyber-sm flex items-center gap-2 px-4 py-2"
+              style={{ fontSize: '11px' }}
+            >
+              <Upload className="w-3.5 h-3.5" />
+              IMPORTAR / EXPORTAR
+            </button>
+          </>
+        }
+      />
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {kpis.map((kpi) => (
           <KpiCard
             key={kpi.title}

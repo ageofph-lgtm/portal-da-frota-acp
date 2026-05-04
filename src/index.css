@@ -444,6 +444,22 @@
   0%   { transform: translateX(-100%); }
   100% { transform: translateX(100%); }
 }
+@keyframes watcher-halo-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(0.9); }
+  50%       { opacity: 1;    transform: scale(1.15); }
+}
+@keyframes watcher-ring-pulse {
+  0%, 100% { opacity: 0.8;  box-shadow: 0 0 8px rgba(255,45,120,0.5),  inset 0 0 4px rgba(255,45,120,0.3); }
+  50%       { opacity: 1;    box-shadow: 0 0 22px rgba(255,45,120,0.95), inset 0 0 12px rgba(255,45,120,0.6); }
+}
+@keyframes watcher-img-pulse {
+  0%, 100% { transform: scale(1);    filter: drop-shadow(0 0 14px rgba(255,45,120,0.65)) drop-shadow(0 0 4px rgba(255,45,120,0.3)); }
+  50%       { transform: scale(1.05); filter: drop-shadow(0 0 28px rgba(255,45,120,0.95)) drop-shadow(0 0 10px rgba(255,45,120,0.55)); }
+}
+
+.watcher-logo-halo { animation: watcher-halo-pulse 2.4s ease-in-out infinite; }
+.watcher-logo-ring { animation: watcher-ring-pulse 2.4s ease-in-out infinite; }
+.watcher-logo-img  { animation: watcher-img-pulse 2.4s ease-in-out infinite; }
 
 .animate-cyber-pulse   { animation: cyber-pulse 2s ease-in-out infinite; }
 .animate-cyber-flicker { animation: cyber-flicker 6s ease-in-out infinite; }
