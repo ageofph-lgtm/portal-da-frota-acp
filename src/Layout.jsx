@@ -95,7 +95,7 @@ export default function Layout({ children, currentPageName }) {
                   textTransform: 'uppercase',
                   marginTop: '-2px',
                 }}>
-                  [PORTAL · STILL · UNIT-LINK-01]
+                  [PORTAL · STILL ·]
                 </div>
               </div>
             </Link>
