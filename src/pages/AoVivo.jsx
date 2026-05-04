@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { Activity, Flag, CheckCircle2, ListOrdered, Sun, Moon,
          ChevronLeft, ChevronRight, Pause, Play, Wrench, CalendarDays } from "lucide-react";
 
@@ -158,15 +159,18 @@ function BoardCell({m, D}){
 //  BIG BOARD — grid auto sem scroll. Calcula minmax com base no nº de itens
 // ─────────────────────────────────────────────────────────────────────────────
 function BigBoard({items, D}){
-  // Ajusta o min-width das células conforme quantidade
   const n = items.length;
-  const minW = n<=6?"260px":n<=9?"220px":n<=12?"190px":n<=16?"165px":"145px";
+  // Colunas fixas baseadas na contagem — nunca deixar sobrar
+  const cols = n<=4?2:n<=6?3:n<=9?3:n<=12?4:n<=16?4:5;
   return(
     <div style={{
       display:"grid",
-      gridTemplateColumns:`repeat(auto-fill,minmax(${minW},1fr))`,
+      gridTemplateColumns:`repeat(${cols},1fr)`,
       gap:"8px",
+      flex:1,
+      overflow:"hidden",
       alignContent:"start",
+      maxHeight:"100%",
     }}>
       {items.map(m=><BoardCell key={m.id} m={m} D={D}/>)}
     </div>
@@ -503,13 +507,13 @@ function Empty({label,D}){
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  GANTT CHART — slide Timeline do AoVivo
+//  GANTT CHART — slide Timeline do AoVivo (v2 — mais claro, barras largas)
 // ─────────────────────────────────────────────────────────────────────────────
 function GanttChart({ machines, D }) {
-  const DAYS = 16;
+  const BACK = 1, AHEAD = 13; // 1 dia atrás, 13 à frente = 14 dias visíveis
   const today = new Date(); today.setHours(0,0,0,0);
-  const startDay = new Date(today); startDay.setDate(startDay.getDate() - 2);
-  const endDay   = new Date(startDay); endDay.setDate(startDay.getDate() + DAYS + 2);
+  const startDay = new Date(today); startDay.setDate(startDay.getDate() - BACK);
+  const endDay   = new Date(today); endDay.setDate(today.getDate() + AHEAD + 1);
   const totalMs  = endDay - startDay;
   const numDays  = Math.round(totalMs / 86400000);
 
@@ -520,7 +524,8 @@ function GanttChart({ machines, D }) {
     const d = new Date(startDay); d.setDate(d.getDate() + i); return d;
   });
 
-  const blocks = [];
+  // Construir blocos — agrupados por data de início para evitar sobreposição
+  const rawBlocks = [];
   for (const m of machines) {
     const pi = m.previsao_inicio ? new Date(m.previsao_inicio) : null;
     const pf = m.previsao_fim    ? new Date(m.previsao_fim)    : null;
@@ -528,164 +533,243 @@ function GanttChart({ machines, D }) {
     const isActive = m.estado && m.estado.startsWith("em-preparacao");
     const isPrio   = m.prioridade === true;
     const run      = m.timer_status === "running";
-    const overrun  = new Date() > pf;
-    blocks.push({ m, pi, pf, isActive, isPrio, run, overrun });
+    const overrun  = new Date() > new Date(pf.getTime() + 86400000);
+    rawBlocks.push({ m, pi, pf, isActive, isPrio, run, overrun });
   }
+  // Ordenar: em curso primeiro, depois por data de início
+  const blocks = rawBlocks.sort((a,b) => {
+    if (a.isActive && !b.isActive) return -1;
+    if (!a.isActive && b.isActive) return 1;
+    return a.pi - b.pi;
+  });
 
-  const BAR_H = 26, GAP = 5;
+  const BAR_H = 32, GAP = 6;
 
-  const barColor = b => {
+  const barBg = b => {
     if (b.overrun)            return "linear-gradient(90deg,#F59E0B,#EF4444)";
     if (b.isActive && b.run)  return "linear-gradient(90deg,#4D9FFF,#FF2D78)";
-    if (b.isActive)           return "linear-gradient(90deg,rgba(77,159,255,0.7),rgba(255,45,120,0.7))";
-    if (b.isPrio)             return "linear-gradient(90deg,rgba(245,158,11,0.7),rgba(245,158,11,0.4))";
-    return "rgba(155,92,246,0.45)";
+    if (b.isActive)           return "linear-gradient(90deg,rgba(77,159,255,0.8),rgba(255,45,120,0.8))";
+    if (b.isPrio)             return "linear-gradient(90deg,rgba(245,158,11,0.75),rgba(239,68,68,0.5))";
+    return "rgba(155,92,246,0.5)";
   };
   const barBorder = b => {
-    if (b.overrun)   return "1px solid rgba(239,68,68,0.7)";
-    if (b.isActive)  return "1px solid rgba(255,45,120,0.5)";
-    if (b.isPrio)    return "1px dashed rgba(245,158,11,0.7)";
-    return "1px dashed rgba(155,92,246,0.6)";
+    if (b.overrun)    return "1.5px solid rgba(239,68,68,0.8)";
+    if (b.isActive)   return "1.5px solid rgba(255,45,120,0.6)";
+    if (b.isPrio)     return "1.5px dashed rgba(245,158,11,0.8)";
+    return "1.5px dashed rgba(155,92,246,0.7)";
   };
-  const barGlow = b => {
-    if (b.overrun)          return "0 0 8px rgba(239,68,68,0.4)";
-    if (b.isActive && b.run) return "0 0 12px rgba(255,45,120,0.5)";
+  const barShadow = b => {
+    if (b.overrun)           return "0 2px 10px rgba(239,68,68,0.35)";
+    if (b.isActive && b.run) return "0 2px 14px rgba(255,45,120,0.5)";
+    if (b.isActive)          return "0 2px 8px rgba(77,159,255,0.35)";
     return "none";
   };
 
   if (blocks.length === 0) {
     return (
       <div style={{display:"flex",alignItems:"center",justifyContent:"center",flex:1,
-        color:D.muted,fontFamily:"monospace",fontSize:"11px",letterSpacing:"0.1em"}}>
+        color:D.muted,fontFamily:"monospace",fontSize:"13px",letterSpacing:"0.12em"}}>
         SEM PREVISÕES DEFINIDAS · CONFIGURAR NO WATCHER
       </div>
     );
   }
 
+  const totalH = blocks.length * (BAR_H + GAP);
+
   return (
-    <div style={{display:"flex",flexDirection:"column",gap:"6px",flex:1,overflow:"hidden"}}>
-      {/* Régua de dias */}
-      <div style={{position:"relative",height:"28px",flexShrink:0,
-        borderBottom:"1px solid " + D.line}}>
+    <div style={{display:"flex",flexDirection:"column",gap:"8px",flex:1,overflow:"hidden"}}>
+
+      {/* ── Régua de dias ── */}
+      <div style={{
+        position:"relative",height:"34px",flexShrink:0,
+        borderBottom:`1.5px solid ${D.line}`,
+        background:D.surface,borderRadius:"6px 6px 0 0",
+      }}>
         {ruleDays.map((d,i) => {
-          const left  = (i / numDays) * 100;
+          const left    = (i / numDays) * 100;
           const isToday = d.toDateString() === today.toDateString();
           const isWE    = d.getDay() === 0 || d.getDay() === 6;
           return (
-            <div key={i} style={{position:"absolute",left:left+"%",top:0,
-              width:(100/numDays)+"%",height:"100%",
-              borderLeft:"1px dashed " + D.line,
-              background: isWE ? "rgba(155,92,246,0.05)" : "transparent"}}>
+            <div key={i} style={{
+              position:"absolute", left:left+"%", top:0,
+              width:(100/numDays)+"%", height:"100%",
+              borderLeft: i>0 ? `1px solid ${isToday?"#FF2D78":isWE?"rgba(155,92,246,0.3)":D.line}` : "none",
+              background: isWE ? "rgba(155,92,246,0.06)" : "transparent",
+            }}>
               <div style={{
-                position:"absolute",top:"4px",left:"4px",
+                position:"absolute", top:"50%", left:"50%",
+                transform:"translate(-50%,-50%)",
+                textAlign:"center",
                 fontFamily:"'Orbitron',monospace",
-                fontSize: isToday ? "10px" : "8px",
-                fontWeight: isToday ? 900 : 500,
-                color: isToday ? D.pink : isWE ? D.purple : D.muted,
-                letterSpacing:"0.05em",
-                textShadow: isToday ? "0 0 8px " + D.pink : "none",
+                fontSize: isToday ? "11px" : "9px",
+                fontWeight: isToday ? 900 : 600,
+                color: isToday ? "#FF2D78" : isWE ? D.purple : D.muted,
+                letterSpacing:"0.04em",
+                textShadow: isToday ? "0 0 10px rgba(255,45,120,0.8)" : "none",
                 whiteSpace:"nowrap",
+                lineHeight:1.2,
               }}>
-                {d.toLocaleDateString("pt-PT",{day:"2-digit",month:"short"})}
+                <div>{d.toLocaleDateString("pt-PT",{day:"2-digit"})}</div>
+                <div style={{fontSize:"7px",opacity:0.7}}>
+                  {d.toLocaleDateString("pt-PT",{month:"short"}).replace(".","").toUpperCase()}
+                </div>
               </div>
+              {isToday && (
+                <div style={{
+                  position:"absolute",bottom:0,left:"50%",transform:"translateX(-50%)",
+                  width:"100%",height:"3px",
+                  background:"linear-gradient(90deg,transparent,#FF2D78,transparent)",
+                }}/>
+              )}
             </div>
           );
         })}
-        {nowPct>=0&&nowPct<=100&&(
-          <div style={{position:"absolute",top:0,bottom:0,left:nowPct+"%",
-            width:"2px",background:D.pink,
-            boxShadow:"0 0 10px " + D.pink + "cc, 0 0 22px " + D.pink + "66",
-            zIndex:5}}/>
+        {/* Linha de agora na régua */}
+        {nowPct>=0 && nowPct<=100 && (
+          <div style={{
+            position:"absolute",top:0,bottom:0,left:nowPct+"%",
+            width:"2px",background:"#FF2D78",
+            boxShadow:"0 0 12px rgba(255,45,120,0.9)",
+            zIndex:10,pointerEvents:"none",
+          }}/>
         )}
       </div>
 
-      {/* Área de barras */}
-      <div style={{position:"relative",flex:1,overflowY:"hidden"}}>
+      {/* ── Área de barras ── */}
+      <div style={{position:"relative",flex:1,overflowY:"hidden",overflowX:"hidden"}}>
+        {/* Grade vertical de fundo */}
         {ruleDays.map((d,i) => {
           const left = (i / numDays) * 100;
           const isWE = d.getDay() === 0 || d.getDay() === 6;
           return (
-            <div key={"v"+i} style={{position:"absolute",top:0,bottom:0,left:left+"%",
-              borderLeft:"1px dashed " + D.line,
+            <div key={"g"+i} style={{
+              position:"absolute",top:0,bottom:0,left:left+"%",
+              width: isWE ? (100/numDays)+"%" : "0",
+              borderLeft: i>0 ? `1px dashed ${D.line}` : "none",
               background: isWE ? "rgba(155,92,246,0.04)" : "transparent",
-              pointerEvents:"none",zIndex:0}}/>
+              pointerEvents:"none",zIndex:0,
+            }}/>
           );
         })}
-        {nowPct>=0&&nowPct<=100&&(
-          <div style={{position:"absolute",top:0,bottom:0,left:nowPct+"%",
-            width:"2px",background:D.pink,
-            boxShadow:"0 0 10px " + D.pink + "cc, 0 0 20px " + D.pink + "55",
-            zIndex:10,pointerEvents:"none"}}/>
+
+        {/* Linha HOJE */}
+        {nowPct>=0 && nowPct<=100 && (
+          <div style={{
+            position:"absolute",top:0,bottom:0,left:nowPct+"%",
+            width:"2px",background:"#FF2D78",
+            boxShadow:"0 0 12px rgba(255,45,120,0.7), 0 0 24px rgba(255,45,120,0.3)",
+            zIndex:10,pointerEvents:"none",
+          }}/>
         )}
+
+        {/* Barras das máquinas */}
         {blocks.map((b, idx) => {
           const left  = pct(b.pi.getTime());
           const right = pct(b.pf.getTime() + 86400000);
-          const width = Math.max(1.5, right - left);
+          const width = Math.max(2, right - left);
           const top   = idx * (BAR_H + GAP);
+          const fmtD  = d => d.toLocaleDateString("pt-PT",{day:"2-digit",month:"2-digit"});
           return (
-            <div key={b.m.id} title={b.m.serie + " · " + b.m.modelo} style={{
-              position:"absolute",
-              left:left+"%",
-              width:width+"%",
-              top:top+"px",
-              height:BAR_H+"px",
-              background: barColor(b),
-              border: barBorder(b),
-              boxShadow: barGlow(b),
-              borderRadius:"4px",
-              display:"flex",alignItems:"center",
-              padding:"0 8px",
-              overflow:"hidden",
-              zIndex:2,
-              gap:"6px",
-            }}>
+            <div key={b.m.id}
+              title={`${b.m.serie} · ${b.m.modelo} · ${fmtD(b.pi)} → ${fmtD(b.pf)}`}
+              style={{
+                position:"absolute",
+                left:left+"%",
+                width:width+"%",
+                top:top+"px",
+                height:BAR_H+"px",
+                background:barBg(b),
+                border:barBorder(b),
+                boxShadow:barShadow(b),
+                borderRadius:"6px",
+                display:"flex",alignItems:"center",
+                padding:"0 10px",
+                overflow:"hidden",
+                zIndex:2,
+                gap:"8px",
+                backdropFilter:"blur(2px)",
+              }}>
+              {/* Indicador running */}
+              {b.run && (
+                <div style={{flexShrink:0,width:"6px",height:"6px",borderRadius:"50%",
+                  background:"#fff",animation:"blink 1s ease-in-out infinite"}}/>
+              )}
+              {/* NS — protagonista */}
               <span style={{
                 fontFamily:"'Orbitron',monospace",
-                fontSize:"11px",
+                fontSize:"12px",
                 fontWeight:900,
                 color:"#fff",
-                letterSpacing:"0.06em",
+                letterSpacing:"0.07em",
                 whiteSpace:"nowrap",
                 overflow:"hidden",
                 textOverflow:"ellipsis",
-                textShadow:"0 1px 4px rgba(0,0,0,0.7)",
+                textShadow:"0 1px 5px rgba(0,0,0,0.8)",
                 flexShrink:0,
+                maxWidth:"55%",
               }}>
                 {b.m.serie || "—"}
               </span>
+              {/* Modelo */}
               <span style={{
-                fontFamily:"monospace",fontSize:"8px",
-                color:"rgba(255,255,255,0.55)",
+                fontFamily:"monospace",fontSize:"9px",
+                color:"rgba(255,255,255,0.65)",
                 whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",
+                flexShrink:1,
               }}>
                 {b.m.modelo}
               </span>
+              {/* Badges */}
               {b.isPrio && (
-                <span style={{flexShrink:0,fontFamily:"monospace",fontSize:"7px",
-                  background:"rgba(245,158,11,0.3)",color:"#F59E0B",
-                  padding:"0 4px",borderRadius:"3px",fontWeight:700}}>⚑</span>
+                <span style={{flexShrink:0,fontFamily:"monospace",fontSize:"8px",
+                  background:"rgba(245,158,11,0.35)",color:"#F59E0B",
+                  padding:"1px 5px",borderRadius:"3px",fontWeight:700,border:"1px solid rgba(245,158,11,0.5)"}}>⚑</span>
+              )}
+              {b.overrun && (
+                <span style={{flexShrink:0,fontFamily:"monospace",fontSize:"8px",
+                  background:"rgba(239,68,68,0.3)",color:"#FCA5A5",
+                  padding:"1px 5px",borderRadius:"3px",fontWeight:700}}>ATRAS.</span>
               )}
             </div>
           );
         })}
       </div>
 
-      {/* Legenda */}
-      <div style={{display:"flex",gap:"14px",flexShrink:0,
-        fontFamily:"monospace",fontSize:"8px",color:D.muted,letterSpacing:"0.08em",
-        paddingTop:"5px",borderTop:"1px solid " + D.line}}>
-        <span><span style={{display:"inline-block",width:"12px",height:"6px",marginRight:"4px",borderRadius:"2px",
-          background:"linear-gradient(90deg,#4D9FFF,#FF2D78)"}}/> EM CURSO</span>
-        <span><span style={{display:"inline-block",width:"12px",height:"6px",marginRight:"4px",borderRadius:"2px",
-          background:"rgba(155,92,246,0.5)",border:"1px dashed rgba(155,92,246,0.7)"}}/> FILA</span>
-        <span><span style={{display:"inline-block",width:"12px",height:"6px",marginRight:"4px",borderRadius:"2px",
-          background:"linear-gradient(90deg,#F59E0B,#EF4444)"}}/> ATRASADA</span>
-        <span><span style={{display:"inline-block",width:"2px",height:"10px",marginRight:"4px",
-          background:"#FF2D78",boxShadow:"0 0 6px #FF2D78"}}/> HOJE</span>
+      {/* ── Legenda ── */}
+      <div style={{
+        display:"flex",gap:"16px",flexShrink:0,
+        fontFamily:"monospace",fontSize:"9px",color:D.muted,letterSpacing:"0.08em",
+        paddingTop:"6px",borderTop:`1px solid ${D.line}`,
+        alignItems:"center",
+      }}>
+        <span style={{display:"flex",alignItems:"center",gap:"5px"}}>
+          <span style={{display:"inline-block",width:"14px",height:"8px",borderRadius:"3px",
+            background:"linear-gradient(90deg,#4D9FFF,#FF2D78)"}}/>
+          EM CURSO
+        </span>
+        <span style={{display:"flex",alignItems:"center",gap:"5px"}}>
+          <span style={{display:"inline-block",width:"14px",height:"8px",borderRadius:"3px",
+            background:"rgba(155,92,246,0.55)",border:"1.5px dashed rgba(155,92,246,0.8)"}}/>
+          FILA
+        </span>
+        <span style={{display:"flex",alignItems:"center",gap:"5px"}}>
+          <span style={{display:"inline-block",width:"14px",height:"8px",borderRadius:"3px",
+            background:"linear-gradient(90deg,#F59E0B,#EF4444)"}}/>
+          ATRASADA
+        </span>
+        <span style={{display:"flex",alignItems:"center",gap:"5px"}}>
+          <span style={{display:"inline-block",width:"2px",height:"14px",
+            background:"#FF2D78",boxShadow:"0 0 8px rgba(255,45,120,0.8)"}}/>
+          HOJE
+        </span>
+        <span style={{marginLeft:"auto",fontFamily:"'Orbitron',monospace",fontSize:"8px",color:D.muted}}>
+          {blocks.length} MÁQUINAS · {blocks.filter(b=>b.isActive).length} EM CURSO · {blocks.filter(b=>!b.isActive).length} FILA
+        </span>
       </div>
     </div>
   );
 }
+
 
 // ── SLIDES list ───────────────────────────────────────────────────────────────
 const SLIDES=[
@@ -701,11 +785,24 @@ const SLIDES=[
 // ── MAIN ──────────────────────────────────────────────────────────────────────
 export default function AoVivo(){
   const [dark,sDark] = useState(()=>{ try{return localStorage.getItem("theme")!=="light";}catch{return true;} });
+  const navigate = useNavigate();
   const [machines,sM] = useState([]);
   const [loading,sL]  = useState(true);
   const [slide,sSlide]= useState(0);
   const [prog,sProg]  = useState(0);
   const [paused,sPaused]=useState(false);
+
+  // ESC para sair do AoVivo
+  useEffect(()=>{
+    const onKey = e => {
+      if(e.key==="Escape") navigate("/");
+      if(e.key==="ArrowRight") next();
+      if(e.key==="ArrowLeft")  prev();
+      if(e.key===" ") { e.preventDefault(); sPaused(p=>!p); }
+    };
+    window.addEventListener("keydown", onKey);
+    return ()=>window.removeEventListener("keydown", onKey);
+  },[navigate, next, prev]);
 
   const D = DT(dark);
   const startRef=useRef(Date.now()), timerRef=useRef(null), progRef=useRef(null);
@@ -765,7 +862,7 @@ export default function AoVivo(){
   // ── Slide renders ─────────────────────────────────────────────────────────
   const slides={
     andamento:(
-      <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
+      <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden"}}>
         <SlideHead title="EM ANDAMENTO" icon={<Activity size={16}/>} color={D.blue} D={D} count={andamento.length}/>
         {andamento.length===0?<Empty label="Nenhuma máquina em produção" D={D}/>:<BigBoard items={andamento} D={D}/>}
       </div>
@@ -929,7 +1026,7 @@ export default function AoVivo(){
         {/* Jordan mascote */}
         <div style={{
           position:"absolute",bottom:0,right:0,
-          width:"38%",maxWidth:"340px",
+          width:"22%",maxWidth:"220px",
           pointerEvents:"none",
           zIndex:0,
           display:"flex",
@@ -983,7 +1080,7 @@ export default function AoVivo(){
           ))}
         </div>
         <div style={{fontFamily:"monospace",fontSize:"7px",color:D.muted,letterSpacing:"0.06em"}}>
-          ← → NAVEGAR · ESPAÇO PAUSAR · F11 FULLSCREEN · {slide+1}/{SLIDES.length}
+          ← → NAVEGAR · ESPAÇO PAUSAR · ESC SAIR · F11 FULLSCREEN · {slide+1}/{SLIDES.length}
         </div>
         <div style={{fontFamily:"monospace",fontSize:"7px",color:D.muted}}>STILL OFICINA · PORTAL DA FROTA ACP</div>
       </div>
