@@ -1,6 +1,5 @@
-import React from "react";
-
-const LOGO_URL = "https://media.base44.com/images/public/69c166ad19149fb0c07883cb/0063feaf2_Gemini_Generated_Image_scmohbscmohbscmo.png";
+import React, { useState } from "react";
+import { WATCHER_LOGO_URL, WATCHER_LOGO_FALLBACK } from "@/config/branding";
 
 const ACCENTS = {
   pink:   { c: "#FF2D78", glow: "rgba(255,45,120,0.85)", glowSoft: "rgba(255,45,120,0.4)" },
@@ -12,6 +11,7 @@ const ACCENTS = {
 
 export default function WatcherLogo({ size = 56, accent = "pink", title = "Frota ACP · Watcher", className = "", interactive = false }) {
   const a = ACCENTS[accent] || ACCENTS.pink;
+  const [src, setSrc] = useState(WATCHER_LOGO_URL);
 
   return (
     <div
@@ -19,7 +19,6 @@ export default function WatcherLogo({ size = 56, accent = "pink", title = "Frota
       style={{ width: size, height: size }}
       title={title}
     >
-      {/* Halo orbital pulsante */}
       <div
         className="watcher-logo-halo"
         style={{
@@ -32,7 +31,6 @@ export default function WatcherLogo({ size = 56, accent = "pink", title = "Frota
           zIndex: 0,
         }}
       />
-      {/* Anel interior */}
       <div
         className="watcher-logo-ring"
         style={{
@@ -46,8 +44,9 @@ export default function WatcherLogo({ size = 56, accent = "pink", title = "Frota
         }}
       />
       <img
-        src={LOGO_URL}
+        src={src}
         alt="WATCHER"
+        onError={() => { if (src !== WATCHER_LOGO_FALLBACK) setSrc(WATCHER_LOGO_FALLBACK); }}
         className={`watcher-logo-img ${interactive ? "cursor-pointer" : ""}`}
         style={{
           width: "100%",
