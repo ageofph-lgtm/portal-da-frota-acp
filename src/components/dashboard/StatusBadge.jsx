@@ -1,18 +1,32 @@
 import React from "react";
 
 const STATUS_STYLES = {
-  "Pronta":           "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700",
-  "UTS":              "bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700",
-  "Aguarda material": "bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-700",
-  "Em progresso":     "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-700",
-  "A começar":        "bg-teal-100 dark:bg-teal-900/40 text-teal-800 dark:text-teal-300 border-teal-200 dark:border-teal-700",
-  "Avaliar":          "bg-purple-100 dark:bg-purple-900/40 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-700",
+  "Pronta":           { c: '#22C55E', glow: 'rgba(34,197,94,0.5)' },
+  "UTS":              { c: '#EF4444', glow: 'rgba(239,68,68,0.5)' },
+  "Aguarda material": { c: '#F59E0B', glow: 'rgba(245,158,11,0.5)' },
+  "Em progresso":     { c: '#4D9FFF', glow: 'rgba(77,159,255,0.5)' },
+  "A começar":        { c: '#14B8A6', glow: 'rgba(20,184,166,0.5)' },
+  "Avaliar":          { c: '#9B5CF6', glow: 'rgba(155,92,246,0.5)' },
 };
 
 export default function StatusBadge({ status }) {
-  const style = STATUS_STYLES[status] || "bg-slate-100 text-slate-800 border-slate-200";
+  const s = STATUS_STYLES[status] || { c: '#9DA0BC', glow: 'rgba(157,160,188,0.4)' };
   return (
-    <span className={`px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full border ${style}`}>
+    <span
+      className="font-mono-cyber inline-flex items-center"
+      style={{
+        padding: '3px 10px',
+        background: `${s.c}1A`,
+        border: `1px solid ${s.glow}`,
+        color: s.c,
+        fontSize: '10px',
+        fontWeight: 700,
+        letterSpacing: '0.12em',
+        textTransform: 'uppercase',
+        boxShadow: `0 0 8px ${s.glow}`,
+        clipPath: 'polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px)',
+      }}
+    >
       {status}
     </span>
   );

@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { LayoutDashboard, Settings, Moon, Sun, Globe, Kanban, Zap } from "lucide-react";
-
-const WATCHER_LOGO = "https://media.base44.com/images/public/69c166ad19149fb0c07883cb/0063feaf2_Gemini_Generated_Image_scmohbscmohbscmo.png";
+import WatcherLogo from "@/components/shared/WatcherLogo";
 
 const T = {
   pink:   '#FF2D78',
@@ -75,12 +74,7 @@ export default function Layout({ children, currentPageName }) {
           <div className="flex items-center justify-between h-16 gap-2 sm:gap-4">
             {/* LOGO + TÍTULO */}
             <Link to={createPageUrl("Dashboard")} className="flex items-center gap-3 min-w-0">
-              <img
-                src={WATCHER_LOGO}
-                alt="Frota ACP"
-                className="h-9 w-9 object-contain shrink-0"
-                style={{ filter: dark ? 'drop-shadow(0 0 12px rgba(255,45,120,0.6))' : 'drop-shadow(0 0 4px rgba(255,45,120,0.3))' }}
-              />
+              <WatcherLogo size={42} accent="pink" interactive />
               <div className="hidden sm:block min-w-0">
                 <div
                   className="watcher-title truncate"

@@ -3,12 +3,12 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recha
 import { motion } from "framer-motion";
 
 const STATUS_COLORS = {
-  "Pronta": "#10b981",
-  "UTS": "#ef4444",
-  "Aguarda material": "#f59e0b",
-  "Em progresso": "#3b82f6",
-  "A começar": "#14b8a6",
-  "Avaliar": "#a855f7",
+  "Pronta": "#22C55E",
+  "UTS": "#EF4444",
+  "Aguarda material": "#F59E0B",
+  "Em progresso": "#4D9FFF",
+  "A começar": "#14B8A6",
+  "Avaliar": "#9B5CF6",
 };
 
 const CustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, value }) => {
@@ -28,9 +28,20 @@ const CustomTooltip = ({ active, payload }) => {
   if (!active || !payload?.length) return null;
   const d = payload[0];
   return (
-    <div className="bg-slate-900/90 text-white px-4 py-3 rounded-xl shadow-xl text-sm">
-      <p className="font-semibold">{d.name}</p>
-      <p className="text-slate-300">{d.value} equipamentos ({d.payload.pct}%)</p>
+    <div
+      className="cyber-card font-mono-cyber"
+      style={{
+        padding: '10px 14px',
+        background: 'rgba(6,6,13,0.96)',
+        border: '1px solid rgba(255,45,120,0.5)',
+        boxShadow: '0 0 14px rgba(255,45,120,0.35)',
+        color: '#E4E6FF',
+        fontSize: '11px',
+        letterSpacing: '0.08em',
+      }}
+    >
+      <p className="watcher-title" style={{ color: '#FF2D78', fontSize: '12px' }}>{d.name}</p>
+      <p style={{ color: 'var(--cyber-muted)', marginTop: '4px' }}>{d.value} equipamentos ({d.payload.pct}%)</p>
     </div>
   );
 };
@@ -56,9 +67,9 @@ export default function FleetChart({ equipment }) {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5 }}
-      className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-700"
+      className="cyber-card clip-cyber p-6"
     >
-      <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 text-center mb-2">Estado da Frota</h3>
+      <h3 className="watcher-title text-center mb-2" style={{ fontSize: '16px', color: 'var(--cyber-text)', letterSpacing: '0.18em' }}>ESTADO DA FROTA</h3>
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
@@ -72,11 +83,11 @@ export default function FleetChart({ equipment }) {
               dataKey="value"
               labelLine={false}
               label={CustomLabel}
-              stroke="#fff"
-              strokeWidth={3}
+              stroke="rgba(13,13,24,0.8)"
+              strokeWidth={2}
             >
               {chartData.map((entry) => (
-                <Cell key={entry.name} fill={STATUS_COLORS[entry.name] || "#94a3b8"} />
+                <Cell key={entry.name} fill={STATUS_COLORS[entry.name] || "#9DA0BC"} />
               ))}
             </Pie>
             <Tooltip content={<CustomTooltip />} />
@@ -85,8 +96,8 @@ export default function FleetChart({ equipment }) {
               align="right"
               layout="vertical"
               iconType="circle"
-              iconSize={10}
-              formatter={(value) => <span className="text-sm text-slate-600 dark:text-slate-300 font-medium">{value}</span>}
+              iconSize={9}
+              formatter={(value) => <span className="font-mono-cyber" style={{ fontSize: '11px', color: 'var(--cyber-text)', letterSpacing: '0.08em' }}>{value}</span>}
             />
           </PieChart>
         </ResponsiveContainer>

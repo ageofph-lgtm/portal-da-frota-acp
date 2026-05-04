@@ -57,14 +57,14 @@ export default function EquipmentTable({ equipment }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.3 }}
-      className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden"
+      className="cyber-card clip-cyber overflow-hidden"
     >
       {/* Header */}
-      <div className="p-5 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30">
+      <div className="p-5 border-b" style={{ borderColor: 'var(--cyber-border)' }}>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-            <Filter className="w-5 h-5 text-[#F08100]" />
-            Registo de Equipamentos
+          <h3 className="watcher-title flex items-center gap-2" style={{ fontSize: '16px', color: 'var(--cyber-text)', letterSpacing: '0.16em' }}>
+            <Filter className="w-4 h-4" style={{ color: '#FF2D78', filter: 'drop-shadow(0 0 6px rgba(255,45,120,0.6))' }} />
+            REGISTO DE EQUIPAMENTOS
           </h3>
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
             <div className="relative">
@@ -73,11 +73,12 @@ export default function EquipmentTable({ equipment }) {
                 placeholder="Pesquisar série, modelo..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 w-full sm:w-64 border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400 focus-visible:ring-[#F08100]"
+                className="pl-10 w-full sm:w-64 dark:bg-slate-700/30 dark:text-slate-100 dark:placeholder-slate-400 focus-visible:ring-pink-500"
+                style={{ borderColor: 'var(--cyber-border)' }}
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-48 border-slate-200 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 focus:ring-[#F08100]">
+              <SelectTrigger className="w-full sm:w-48 dark:bg-slate-700/30 dark:text-slate-100 focus:ring-pink-500" style={{ borderColor: 'var(--cyber-border)' }}>
                 <SelectValue placeholder="Todos os Estados" />
               </SelectTrigger>
               <SelectContent>
@@ -95,15 +96,22 @@ export default function EquipmentTable({ equipment }) {
       <div className="overflow-x-auto">
         <table className="w-full text-left">
           <thead>
-            <tr className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider border-b border-slate-200 dark:border-slate-700">
-              <th className="px-6 py-4 font-semibold">Estado</th>
-              <th className="px-6 py-4 font-semibold">Equipamento</th>
-              <th className="px-6 py-4 font-semibold">Nº Série</th>
-              <th className="px-6 py-4 font-semibold">Acção / Obs.</th>
-              <th className="px-6 py-4 font-semibold w-20">Editar</th>
+            <tr
+              className="col-header-cyber border-b"
+              style={{
+                background: 'rgba(255,45,120,0.04)',
+                color: 'var(--cyber-muted)',
+                borderColor: 'var(--cyber-border)',
+              }}
+            >
+              <th className="px-6 py-4">Estado</th>
+              <th className="px-6 py-4">Equipamento</th>
+              <th className="px-6 py-4">Nº Série</th>
+              <th className="px-6 py-4">Ação / Obs.</th>
+              <th className="px-6 py-4 w-20">Editar</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+          <tbody style={{ color: 'var(--cyber-text)' }}>
             <AnimatePresence>
               {filtered.length === 0 ? (
                 <tr>
@@ -118,7 +126,10 @@ export default function EquipmentTable({ equipment }) {
                     key={eq.id}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="hover:bg-slate-50/80 dark:hover:bg-slate-700/50 transition group"
+                    className="transition group"
+                    style={{ borderTop: '1px solid var(--cyber-border)' }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,45,120,0.04)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       {editingId === eq.id ? (
@@ -136,13 +147,13 @@ export default function EquipmentTable({ equipment }) {
                         <StatusBadge status={eq.status} />
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap font-semibold text-slate-800 dark:text-slate-100 group-hover:text-[#F08100] transition">
+                    <td className="px-6 py-4 whitespace-nowrap font-display font-bold tracking-wider group-hover:text-pink-500 transition" style={{ color: 'var(--cyber-text)' }}>
                       {eq.equipment}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap font-mono text-sm text-slate-500 dark:text-slate-400">
+                    <td className="px-6 py-4 whitespace-nowrap font-mono-cyber text-xs" style={{ color: 'var(--cyber-muted)', letterSpacing: '0.08em' }}>
                       {eq.serial_number}
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-700 dark:text-slate-300">
+                    <td className="px-6 py-4 text-sm" style={{ color: 'var(--cyber-text)' }}>
                       {editingId === eq.id ? (
                         <Input
                           value={editData.action}
@@ -151,7 +162,7 @@ export default function EquipmentTable({ equipment }) {
                           placeholder="Observação..."
                         />
                       ) : (
-                        eq.action || <span className="text-slate-300 dark:text-slate-600 italic">—</span>
+                        eq.action || <span style={{ color: 'var(--cyber-muted)', fontStyle: 'italic', opacity: 0.5 }}>—</span>
                       )}
                     </td>
                     <td className="px-6 py-4">
@@ -165,7 +176,7 @@ export default function EquipmentTable({ equipment }) {
                           </Button>
                         </div>
                       ) : (
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-[#F08100] hover:bg-orange-50 opacity-0 group-hover:opacity-100 transition" onClick={() => startEdit(eq)}>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 hover:text-pink-500 opacity-0 group-hover:opacity-100 transition" style={{ color: 'var(--cyber-muted)' }} onClick={() => startEdit(eq)}>
                           <Pencil className="w-4 h-4" />
                         </Button>
                       )}
@@ -179,11 +190,11 @@ export default function EquipmentTable({ equipment }) {
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center text-sm text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900/30">
-        <span>Mostrando {filtered.length} de {equipment.length} registos</span>
-        <button onClick={resetFilters} className="text-[#F08100] hover:text-orange-700 font-medium transition flex items-center gap-1">
+      <div className="p-4 border-t flex justify-between items-center font-mono-cyber text-xs" style={{ borderColor: 'var(--cyber-border)', color: 'var(--cyber-muted)', letterSpacing: '0.08em' }}>
+        <span>MOSTRANDO {filtered.length} DE {equipment.length} REGISTOS</span>
+        <button onClick={resetFilters} className="font-bold transition flex items-center gap-1" style={{ color: '#FF2D78' }}>
           <RotateCcw className="w-3.5 h-3.5" />
-          Limpar Filtros
+          LIMPAR FILTROS
         </button>
       </div>
     </motion.div>
