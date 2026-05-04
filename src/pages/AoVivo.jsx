@@ -244,9 +244,12 @@ function CalendarFila({ items, D }) {
                 {dayMachines.length===0
                   ? <div style={{fontFamily:"monospace",fontSize:"8px",color:D.sub,textAlign:"center",paddingTop:"8px"}}>—</div>
                   : dayMachines.map((m,i)=>(
-                    <div key={i} style={{padding:"4px 7px",background:`${D.blue}13`,border:`1px solid ${m.prioridade?D.yellow+"44":D.blue+"22"}`,borderRadius:"6px",display:"flex",alignItems:"center",gap:"4px"}}>
-                      {m.prioridade && <Flag size={8} color={D.yellow}/>}
-                      <span style={{fontFamily:"'Orbitron',monospace",fontSize:"9px",fontWeight:700,color:D.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{m.modelo}</span>
+                    <div key={i} style={{padding:"4px 7px",background:`${D.blue}13`,border:`1px solid ${m.prioridade?D.yellow+"44":D.blue+"22"}`,borderRadius:"6px",display:"flex",flexDirection:"column",gap:"1px"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:"4px"}}>
+                        {m.prioridade && <Flag size={8} color={D.yellow}/>}
+                        <span style={{fontFamily:"'Orbitron',monospace",fontSize:"9px",fontWeight:700,color:D.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{m.modelo}</span>
+                      </div>
+                      {m.serie && <span style={{fontFamily:"monospace",fontSize:"7px",color:D.muted,letterSpacing:"0.05em",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{m.serie}</span>}
                     </div>
                   ))}
               </div>
@@ -481,7 +484,14 @@ export default function AoVivo() {
   const isRecon = m=>{ const r=m.recondicao||{}; return r.bronze===true||r.prata===true; };
   const reconAndamento  = machines.filter(m=>isRecon(m)&&m.estado?.startsWith("em-preparacao"));
   const reconAfazer     = machines.filter(m=>isRecon(m)&&m.estado==="a-fazer");
-  const reconConcluidas = machines.filter(m=>isRecon(m)&&(m.estado?.startsWith("concluida")||m.estado==="concluida"));
+  const recon30ago = new Date(Date.now() - 30*24*3600*1000);
+  const reconConcluidas = machines.filter(m=>{
+    if(!isRecon(m)) return false;
+    if(!m.estado?.startsWith("concluida")&&m.estado!=="concluida") return false;
+    const raw = m.dataConclusao||m.updated_date;
+    if(!raw) return false;
+    try{ return new Date(raw)>=recon30ago; }catch{return false;}
+  });
 
   // Concluídas DESTA semana (segunda a agora)
   const concluiSemana = machines.filter(m=>{

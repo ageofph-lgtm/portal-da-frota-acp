@@ -14,6 +14,18 @@ const T = {
 };
 
 export default function Layout({ children, currentPageName }) {
+  const [isFullscreen, setIsFullscreen] = React.useState(false);
+
+  React.useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
+    document.addEventListener("webkitfullscreenchange", handler);
+    return () => {
+      document.removeEventListener("fullscreenchange", handler);
+      document.removeEventListener("webkitfullscreenchange", handler);
+    };
+  }, []);
+
   const [dark, setDark] = useState(() => {
     try {
       const saved = localStorage.getItem("theme");
@@ -52,8 +64,8 @@ export default function Layout({ children, currentPageName }) {
 
   return (
     <div className="min-h-screen flex flex-col cyber-bg-page" style={{ background: theme.bg }}>
-      {/* ── NAVBAR ── */}
-      <nav style={{
+      {/* ── NAVBAR (oculta em fullscreen) ── */}
+      {!isFullscreen && <nav style={{
         background: dark
           ? 'linear-gradient(180deg, rgba(6,6,13,0.98) 0%, rgba(9,9,20,0.96) 100%)'
           : 'linear-gradient(180deg, rgba(232,234,245,0.98) 0%, rgba(220,222,235,0.96) 100%)',
@@ -147,7 +159,7 @@ export default function Layout({ children, currentPageName }) {
             </div>
           </div>
         </div>
-      </nav>
+      </nav>}
 
       {/* ── MAIN ── */}
       <main className="flex-1 max-w-[1600px] w-full mx-auto px-3 sm:px-6 py-6 sm:py-8">
