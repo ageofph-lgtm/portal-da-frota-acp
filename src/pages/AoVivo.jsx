@@ -10,6 +10,7 @@ const BRIDGE_HEADERS = {
   "api_key":"f8517554492e492090b62dd501ad7e14",
 };
 const SLIDE_DURATION = 30000;
+const JORDAN_URL = "https://base44.app/api/apps/69c166ad19149fb0c07883cb/files/mp/public/69c166ad19149fb0c07883cb/d672073ee_3c1ea8ca9_Gemini_Generated_Image_if4bsvif4bsvif4b.png";
 
 async function callBridge(p) {
   const r = await fetch(BRIDGE_URL,{method:"POST",headers:BRIDGE_HEADERS,body:JSON.stringify(p)});
@@ -294,27 +295,46 @@ function CalendarFila({items, D}){
 
           {futuras.length>0&&(
             <div>
-              <div style={{fontFamily:"monospace",fontSize:"8px",letterSpacing:"0.1em",color:D.muted,marginBottom:"6px"}}>
-                SEMANAS SEGUINTES — {futuras.length}
+              <div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}}>
+                <div style={{width:"3px",height:"18px",borderRadius:"2px",background:`linear-gradient(180deg,${D.blue},${D.pink})`}}/>
+                <span style={{fontFamily:"'Orbitron',monospace",fontSize:"10px",fontWeight:800,
+                  letterSpacing:"0.1em",color:D.blue}}>SEMANAS SEGUINTES</span>
+                <span style={{fontFamily:"'Orbitron',monospace",fontSize:"14px",fontWeight:900,color:D.blue}}>{futuras.length}</span>
+                <div style={{flex:1,height:"1px",background:`linear-gradient(90deg,${D.blue}44,transparent)`}}/>
               </div>
               <div style={{display:"flex",flexDirection:"column",gap:"4px"}}>
                 {futuras.map((m,i)=>{
                   const dt=new Date(m.previsao_inicio);
                   const label=dt.toLocaleDateString("pt-PT",{weekday:"short",day:"2-digit",month:"2-digit"});
                   return(
-                    <div key={i} style={{background:D.card,border:`1px solid ${D.line}`,
-                      borderLeft:`3px solid ${D.green}`,borderRadius:"6px",
-                      padding:"7px 10px",display:"flex",alignItems:"center",gap:"10px",overflow:"hidden"}}>
+                    <div key={i} style={{background:D.card,
+                      border:`1px solid ${D.blue}22`,
+                      borderLeft:`3px solid ${D.blue}`,
+                      borderRadius:"6px",
+                      padding:"8px 12px",display:"flex",alignItems:"center",gap:"12px",overflow:"hidden"}}>
+                      {/* Data em destaque */}
+                      <div style={{flexShrink:0,textAlign:"center",
+                        background:`${D.blue}14`,border:`1px solid ${D.blue}33`,
+                        borderRadius:"6px",padding:"5px 10px",minWidth:"72px"}}>
+                        <div style={{fontFamily:"'Orbitron',monospace",fontSize:"9px",fontWeight:900,
+                          color:D.blue,letterSpacing:"0.08em",textTransform:"uppercase"}}>
+                          {dt.toLocaleDateString("pt-PT",{weekday:"short"})}
+                        </div>
+                        <div style={{fontFamily:"'Orbitron',monospace",fontSize:"13px",fontWeight:900,
+                          color:D.blue,letterSpacing:"0.04em",marginTop:"1px"}}>
+                          {dt.toLocaleDateString("pt-PT",{day:"2-digit",month:"2-digit"})}
+                        </div>
+                      </div>
+                      {/* Info máquina */}
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontFamily:"'Orbitron',monospace",fontSize:"12px",fontWeight:800,
-                          color:D.blue,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                        <div style={{fontFamily:"'Orbitron',monospace",fontSize:"13px",fontWeight:800,
+                          color:D.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",
+                          textShadow:`0 0 8px ${D.blue}33`}}>
                           {m.serie||"—"}
                         </div>
-                        <div style={{fontFamily:"monospace",fontSize:"9px",color:D.muted,marginTop:"1px"}}>{m.modelo}</div>
+                        <div style={{fontFamily:"monospace",fontSize:"9px",color:D.muted,marginTop:"2px"}}>{m.modelo}</div>
                       </div>
-                      <span style={{fontFamily:"monospace",fontSize:"10px",color:D.green,fontWeight:700,flexShrink:0}}>
-                        {label}
-                      </span>
+                      {m.prioridade&&<Flag size={12} color={D.yellow} style={{flexShrink:0}}/>}
                     </div>
                   );
                 })}
@@ -707,13 +727,26 @@ export default function AoVivo(){
       </div>
 
       {/* ── SLIDE CONTENT — ocupa tudo, sem overflow ── */}
-      <div style={{flex:1,padding:"14px 20px",overflow:"hidden",display:"flex",flexDirection:"column"}}>
+      <div style={{flex:1,padding:"14px 20px",overflow:"hidden",display:"flex",flexDirection:"column",position:"relative"}}>
+        {/* Marca d'água Jordan */}
+        <div style={{
+          position:"absolute",bottom:0,right:0,
+          width:"38%",maxWidth:"340px",
+          aspectRatio:"1/1.2",
+          backgroundImage:`url(https://base44.app/api/apps/69c166ad19149fb0c07883cb/files/mp/public/69c166ad19149fb0c07883cb/d672073ee_3c1ea8ca9_Gemini_Generated_Image_if4bsvif4bsvif4b.png)`,
+          backgroundSize:"contain",
+          backgroundRepeat:"no-repeat",
+          backgroundPosition:"bottom right",
+          opacity:0.07,
+          pointerEvents:"none",
+          zIndex:0,
+        }}/>
         {loading
-          ?<div style={{display:"flex",alignItems:"center",justifyContent:"center",flex:1}}>
+          ?<div style={{display:"flex",alignItems:"center",justifyContent:"center",flex:1,position:"relative",zIndex:1}}>
             <span style={{fontFamily:"'Orbitron',monospace",fontSize:"12px",color:D.muted,
               animation:"blink 1s ease-in-out infinite"}}>A CARREGAR...</span>
           </div>
-          :slides[SLIDES[slide].id]}
+          :<div style={{position:"relative",zIndex:1,flex:1,display:"flex",flexDirection:"column"}}>{slides[SLIDES[slide].id]}</div>}
       </div>
 
       {/* FOOTER */}
