@@ -501,6 +501,192 @@ function Empty({label,D}){
   );
 }
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  GANTT CHART — slide Timeline do AoVivo
+// ─────────────────────────────────────────────────────────────────────────────
+function GanttChart({ machines, D }) {
+  const DAYS = 16;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const startDay = new Date(today); startDay.setDate(startDay.getDate() - 2);
+  const endDay   = new Date(startDay); endDay.setDate(startDay.getDate() + DAYS + 2);
+  const totalMs  = endDay - startDay;
+  const numDays  = Math.round(totalMs / 86400000);
+
+  const pct = ms => Math.max(0, Math.min(100, ((ms - startDay.getTime()) / totalMs) * 100));
+  const nowPct = pct(Date.now());
+
+  const ruleDays = Array.from({length: numDays + 1}, (_, i) => {
+    const d = new Date(startDay); d.setDate(d.getDate() + i); return d;
+  });
+
+  const blocks = [];
+  for (const m of machines) {
+    const pi = m.previsao_inicio ? new Date(m.previsao_inicio) : null;
+    const pf = m.previsao_fim    ? new Date(m.previsao_fim)    : null;
+    if (!pi || !pf) continue;
+    const isActive = m.estado && m.estado.startsWith("em-preparacao");
+    const isPrio   = m.prioridade === true;
+    const run      = m.timer_status === "running";
+    const overrun  = new Date() > pf;
+    blocks.push({ m, pi, pf, isActive, isPrio, run, overrun });
+  }
+
+  const BAR_H = 26, GAP = 5;
+
+  const barColor = b => {
+    if (b.overrun)            return "linear-gradient(90deg,#F59E0B,#EF4444)";
+    if (b.isActive && b.run)  return "linear-gradient(90deg,#4D9FFF,#FF2D78)";
+    if (b.isActive)           return "linear-gradient(90deg,rgba(77,159,255,0.7),rgba(255,45,120,0.7))";
+    if (b.isPrio)             return "linear-gradient(90deg,rgba(245,158,11,0.7),rgba(245,158,11,0.4))";
+    return "rgba(155,92,246,0.45)";
+  };
+  const barBorder = b => {
+    if (b.overrun)   return "1px solid rgba(239,68,68,0.7)";
+    if (b.isActive)  return "1px solid rgba(255,45,120,0.5)";
+    if (b.isPrio)    return "1px dashed rgba(245,158,11,0.7)";
+    return "1px dashed rgba(155,92,246,0.6)";
+  };
+  const barGlow = b => {
+    if (b.overrun)          return "0 0 8px rgba(239,68,68,0.4)";
+    if (b.isActive && b.run) return "0 0 12px rgba(255,45,120,0.5)";
+    return "none";
+  };
+
+  if (blocks.length === 0) {
+    return (
+      <div style={{display:"flex",alignItems:"center",justifyContent:"center",flex:1,
+        color:D.muted,fontFamily:"monospace",fontSize:"11px",letterSpacing:"0.1em"}}>
+        SEM PREVISÕES DEFINIDAS · CONFIGURAR NO WATCHER
+      </div>
+    );
+  }
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:"6px",flex:1,overflow:"hidden"}}>
+      {/* Régua de dias */}
+      <div style={{position:"relative",height:"28px",flexShrink:0,
+        borderBottom:"1px solid " + D.line}}>
+        {ruleDays.map((d,i) => {
+          const left  = (i / numDays) * 100;
+          const isToday = d.toDateString() === today.toDateString();
+          const isWE    = d.getDay() === 0 || d.getDay() === 6;
+          return (
+            <div key={i} style={{position:"absolute",left:left+"%",top:0,
+              width:(100/numDays)+"%",height:"100%",
+              borderLeft:"1px dashed " + D.line,
+              background: isWE ? "rgba(155,92,246,0.05)" : "transparent"}}>
+              <div style={{
+                position:"absolute",top:"4px",left:"4px",
+                fontFamily:"'Orbitron',monospace",
+                fontSize: isToday ? "10px" : "8px",
+                fontWeight: isToday ? 900 : 500,
+                color: isToday ? D.pink : isWE ? D.purple : D.muted,
+                letterSpacing:"0.05em",
+                textShadow: isToday ? "0 0 8px " + D.pink : "none",
+                whiteSpace:"nowrap",
+              }}>
+                {d.toLocaleDateString("pt-PT",{day:"2-digit",month:"short"})}
+              </div>
+            </div>
+          );
+        })}
+        {nowPct>=0&&nowPct<=100&&(
+          <div style={{position:"absolute",top:0,bottom:0,left:nowPct+"%",
+            width:"2px",background:D.pink,
+            boxShadow:"0 0 10px " + D.pink + "cc, 0 0 22px " + D.pink + "66",
+            zIndex:5}}/>
+        )}
+      </div>
+
+      {/* Área de barras */}
+      <div style={{position:"relative",flex:1,overflowY:"hidden"}}>
+        {ruleDays.map((d,i) => {
+          const left = (i / numDays) * 100;
+          const isWE = d.getDay() === 0 || d.getDay() === 6;
+          return (
+            <div key={"v"+i} style={{position:"absolute",top:0,bottom:0,left:left+"%",
+              borderLeft:"1px dashed " + D.line,
+              background: isWE ? "rgba(155,92,246,0.04)" : "transparent",
+              pointerEvents:"none",zIndex:0}}/>
+          );
+        })}
+        {nowPct>=0&&nowPct<=100&&(
+          <div style={{position:"absolute",top:0,bottom:0,left:nowPct+"%",
+            width:"2px",background:D.pink,
+            boxShadow:"0 0 10px " + D.pink + "cc, 0 0 20px " + D.pink + "55",
+            zIndex:10,pointerEvents:"none"}}/>
+        )}
+        {blocks.map((b, idx) => {
+          const left  = pct(b.pi.getTime());
+          const right = pct(b.pf.getTime() + 86400000);
+          const width = Math.max(1.5, right - left);
+          const top   = idx * (BAR_H + GAP);
+          return (
+            <div key={b.m.id} title={b.m.serie + " · " + b.m.modelo} style={{
+              position:"absolute",
+              left:left+"%",
+              width:width+"%",
+              top:top+"px",
+              height:BAR_H+"px",
+              background: barColor(b),
+              border: barBorder(b),
+              boxShadow: barGlow(b),
+              borderRadius:"4px",
+              display:"flex",alignItems:"center",
+              padding:"0 8px",
+              overflow:"hidden",
+              zIndex:2,
+              gap:"6px",
+            }}>
+              <span style={{
+                fontFamily:"'Orbitron',monospace",
+                fontSize:"11px",
+                fontWeight:900,
+                color:"#fff",
+                letterSpacing:"0.06em",
+                whiteSpace:"nowrap",
+                overflow:"hidden",
+                textOverflow:"ellipsis",
+                textShadow:"0 1px 4px rgba(0,0,0,0.7)",
+                flexShrink:0,
+              }}>
+                {b.m.serie || "—"}
+              </span>
+              <span style={{
+                fontFamily:"monospace",fontSize:"8px",
+                color:"rgba(255,255,255,0.55)",
+                whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",
+              }}>
+                {b.m.modelo}
+              </span>
+              {b.isPrio && (
+                <span style={{flexShrink:0,fontFamily:"monospace",fontSize:"7px",
+                  background:"rgba(245,158,11,0.3)",color:"#F59E0B",
+                  padding:"0 4px",borderRadius:"3px",fontWeight:700}}>⚑</span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legenda */}
+      <div style={{display:"flex",gap:"14px",flexShrink:0,
+        fontFamily:"monospace",fontSize:"8px",color:D.muted,letterSpacing:"0.08em",
+        paddingTop:"5px",borderTop:"1px solid " + D.line}}>
+        <span><span style={{display:"inline-block",width:"12px",height:"6px",marginRight:"4px",borderRadius:"2px",
+          background:"linear-gradient(90deg,#4D9FFF,#FF2D78)"}}/> EM CURSO</span>
+        <span><span style={{display:"inline-block",width:"12px",height:"6px",marginRight:"4px",borderRadius:"2px",
+          background:"rgba(155,92,246,0.5)",border:"1px dashed rgba(155,92,246,0.7)"}}/> FILA</span>
+        <span><span style={{display:"inline-block",width:"12px",height:"6px",marginRight:"4px",borderRadius:"2px",
+          background:"linear-gradient(90deg,#F59E0B,#EF4444)"}}/> ATRASADA</span>
+        <span><span style={{display:"inline-block",width:"2px",height:"10px",marginRight:"4px",
+          background:"#FF2D78",boxShadow:"0 0 6px #FF2D78"}}/> HOJE</span>
+      </div>
+    </div>
+  );
+}
+
 // ── SLIDES list ───────────────────────────────────────────────────────────────
 const SLIDES=[
   {id:"andamento",    label:"EM ANDAMENTO"},
