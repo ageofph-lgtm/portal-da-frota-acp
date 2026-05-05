@@ -798,18 +798,6 @@ export default function AoVivo(){
   const [prog,sProg]  = useState(0);
   const [paused,sPaused]=useState(false);
 
-  // ESC para sair do AoVivo
-  useEffect(()=>{
-    const onKey = e => {
-      if(e.key==="Escape") navigate("/");
-      if(e.key==="ArrowRight") next();
-      if(e.key==="ArrowLeft")  prev();
-      if(e.key===" ") { e.preventDefault(); sPaused(p=>!p); }
-    };
-    window.addEventListener("keydown", onKey);
-    return ()=>window.removeEventListener("keydown", onKey);
-  },[navigate, next, prev]);
-
   const D = DT(dark);
   const startRef=useRef(Date.now()), timerRef=useRef(null), progRef=useRef(null);
 
