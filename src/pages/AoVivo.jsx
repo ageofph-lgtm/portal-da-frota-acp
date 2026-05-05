@@ -887,17 +887,30 @@ export default function AoVivo(){
           </div>}
       </div>
     ),
-    recon:(
-      <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
-        <SlideHead title="RECONDICIONAMENTO" icon={<Wrench size={16}/>} color={D.purple} D={D} count={reconAnd.length+reconAF.length+reconCon.length}/>
-        {reconAnd.length+reconAF.length+reconCon.length===0?<Empty label="Sem máquinas em recondicionamento" D={D}/>:
-          <div style={{display:"flex",flexDirection:"column",gap:"4px"}}>
-            {reconAnd.length>0&&<><SecLabel label="▶ EM ANDAMENTO" D={D}/>{reconAnd.map((m,i)=><RowItem key={m.id} m={m} idx={i} D={D} accent={D.purple}/>)}</>}
-            {reconAF.length>0&&<><SecLabel label="⏳ A FAZER" D={D}/>{reconAF.map((m,i)=><RowItem key={m.id} m={m} idx={i} D={D} accent={D.purple} showTimer={false}/>)}</>}
-            {reconCon.length>0&&<><SecLabel label="✓ CONCLUÍDAS (30 DIAS)" D={D}/>{reconCon.map((m,i)=><RowItem key={m.id} m={m} idx={i} D={D} accent={D.green} showTimer={false} showDate/>)}</>}
-          </div>}
-      </div>
-    ),
+    recon:(()=>{
+      const reconActive = [...reconAnd].sort((a,b)=>{
+        const aRun=a.timer_status==="running",bRun=b.timer_status==="running";
+        if(aRun&&!bRun)return -1;if(!aRun&&bRun)return 1;return 0;
+      });
+      const reconAll = [...reconActive,...reconAF];
+      return(
+        <div style={{display:"flex",flexDirection:"column",height:"100%",gap:"8px"}}>
+          <SlideHead title="RECONDICIONAMENTO" icon={<Wrench size={16}/>} color={D.purple} D={D} count={reconAnd.length+reconAF.length+reconCon.length}/>
+          {reconAll.length+reconCon.length===0?<Empty label="Sem máquinas em recondicionamento" D={D}/>:
+            <>
+              {reconAll.length>0&&<BigBoard items={reconAll} D={D}/>}
+              {reconCon.length>0&&(
+                <div style={{flexShrink:0}}>
+                  <SecLabel label="✓ CONCLUÍDAS (30 DIAS)" D={D}/>
+                  <div style={{display:"flex",flexDirection:"column",gap:"4px",marginTop:"4px"}}>
+                    {reconCon.map((m,i)=><RowItem key={m.id} m={m} idx={i} D={D} accent={D.green} showTimer={false} showDate/>)}
+                  </div>
+                </div>
+              )}
+            </>}
+        </div>
+      );
+    })(),
     timeline:(
       <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
         <SlideHead title="TIMELINE · 14 DIAS" icon={<CalendarDays size={16}/>} color={D.pink} D={D}
