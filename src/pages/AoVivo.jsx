@@ -888,11 +888,8 @@ export default function AoVivo(){
       </div>
     ),
     recon:(()=>{
-      const reconActive = [...reconAnd].sort((a,b)=>{
-        const aRun=a.timer_status==="running",bRun=b.timer_status==="running";
-        if(aRun&&!bRun)return -1;if(!aRun&&bRun)return 1;return 0;
-      });
-      const reconAll = [...reconActive,...reconAF];
+      const timerPriority=s=>s==="running"?0:s==="paused"?1:2;
+      const reconAll=[...reconAnd,...reconAF].sort((a,b)=>timerPriority(a.timer_status)-timerPriority(b.timer_status));
       return(
         <div style={{display:"flex",flexDirection:"column",height:"100%",gap:"8px"}}>
           <SlideHead title="RECONDICIONAMENTO" icon={<Wrench size={16}/>} color={D.purple} D={D} count={reconAnd.length+reconAF.length+reconCon.length}/>
