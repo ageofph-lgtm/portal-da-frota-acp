@@ -834,7 +834,7 @@ export default function AoVivo(){
   const isRecon=m=>{const r=m.recondicao||{};return r.bronze===true||r.prata===true;};
   const r30=new Date(Date.now()-30*24*3600*1000);
 
-  const andamento    = machines.filter(m=>m.timer_status==="running"||m.timer_status==="paused");
+  const andamento    = machines.filter(m=>(m.timer_status==="running"||m.timer_status==="paused")&&!m.estado?.startsWith("concluida")&&m.estado!=="concluida");
   const prioritarias = machines.filter(m=>m.prioridade===true&&!m.estado?.startsWith("concluida")&&m.estado!=="concluida");
   const filaACP      = machines.filter(m=>m.estado==="a-fazer"&&m.tipo!=="nova");
   const ntsAnd       = machines.filter(m=>m.tipo==="nova"&&m.estado?.startsWith("em-preparacao"));
