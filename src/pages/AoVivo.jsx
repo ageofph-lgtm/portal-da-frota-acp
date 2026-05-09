@@ -29,18 +29,52 @@ function getFridayUTC(){ const f=new Date(getMondayUTC()); f.setUTCDate(f.getUTC
 const C = {
   pink:"#FF2D78", blue:"#4D9FFF", green:"#22C55E",
   yellow:"#F59E0B", purple:"#9B5CF6", bronze:"#CD7F32", silver:"#C0C0C0",
+  cyan:"#22D3EE", red:"#EF4444",
 };
 const DT = d => ({
-  bg:      d?"#06060d":"#eef0f7",
-  surface: d?"#0d0d1c":"#ffffff",
-  card:    d?"#0f0f22":"#f4f5fc",
-  cardB:   d?"#12122a":"#ecedf8",
-  line:    d?"rgba(255,255,255,0.06)":"rgba(0,0,0,0.06)",
-  sub:     d?"rgba(255,255,255,0.09)":"rgba(0,0,0,0.09)",
+  bg:      d?"#04040a":"#eef0f7",
+  surface: d?"#0a0a18":"#ffffff",
+  card:    d?"#0e0e22":"#f4f5fc",
+  cardB:   d?"#13132c":"#ecedf8",
+  line:    d?"rgba(255,255,255,0.07)":"rgba(0,0,0,0.07)",
+  sub:     d?"rgba(255,255,255,0.10)":"rgba(0,0,0,0.10)",
   text:    d?"#e4e6ff":"#0b0c18",
-  muted:   d?"rgba(228,230,255,0.38)":"rgba(11,12,24,0.4)",
+  muted:   d?"rgba(228,230,255,0.45)":"rgba(11,12,24,0.5)",
+  hudLine: d?"rgba(77,159,255,0.35)":"rgba(77,159,255,0.45)",
+  hudGlow: d?"rgba(77,159,255,0.18)":"rgba(77,159,255,0.10)",
+  scanBg:  d?"rgba(255,45,120,0.04)":"rgba(255,45,120,0.03)",
   ...C,
 });
+
+// ── HUD primitives ────────────────────────────────────────────────────────────
+// Corner brackets [⌜ ⌝ ⌞ ⌟] — define um frame táctico em qualquer container
+function HudCorners({color, size=10, thickness=2, inset=-1, opacity=0.9}){
+  const c = color, t = thickness, s = size, n = inset;
+  const base = {position:"absolute", width:s, height:s, opacity, pointerEvents:"none"};
+  return(
+    <>
+      <span style={{...base, top:n, left:n, borderTop:`${t}px solid ${c}`, borderLeft:`${t}px solid ${c}`}}/>
+      <span style={{...base, top:n, right:n, borderTop:`${t}px solid ${c}`, borderRight:`${t}px solid ${c}`}}/>
+      <span style={{...base, bottom:n, left:n, borderBottom:`${t}px solid ${c}`, borderLeft:`${t}px solid ${c}`}}/>
+      <span style={{...base, bottom:n, right:n, borderBottom:`${t}px solid ${c}`, borderRight:`${t}px solid ${c}`}}/>
+    </>
+  );
+}
+
+// Tag angular [ TEXTO ] — substitui pills com aspecto táctico
+function HudTag({color, label, dim=false}){
+  return(
+    <span style={{
+      fontFamily:"'Orbitron',monospace", fontSize:"clamp(8px,0.65vw,10px)",
+      fontWeight:800, letterSpacing:"0.12em",
+      padding:"2px 7px",
+      color, background:`${color}${dim?"10":"1a"}`,
+      border:`1px solid ${color}${dim?"33":"55"}`,
+      clipPath:"polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)",
+      whiteSpace:"nowrap",
+    }}>{label}</span>
+  );
+}
 
 // ── Live timer ────────────────────────────────────────────────────────────────
 function useLiveTimer(m){
@@ -58,9 +92,17 @@ function Clock({D}){
   const [n,sN]=useState(new Date());
   useEffect(()=>{const id=setInterval(()=>sN(new Date()),1000);return()=>clearInterval(id);},[]);
   return(
-    <div style={{textAlign:"right",lineHeight:1.1}}>
-      <div style={{fontFamily:"'Orbitron',monospace",fontSize:"17px",fontWeight:900,color:D.text,letterSpacing:"0.06em"}}>{n.toLocaleTimeString("pt-PT")}</div>
-      <div style={{fontFamily:"monospace",fontSize:"8px",color:D.muted,textTransform:"uppercase",letterSpacing:"0.05em"}}>{n.toLocaleDateString("pt-PT",{weekday:"long",day:"2-digit",month:"short"})}</div>
+    <div style={{textAlign:"right",lineHeight:1.1,position:"relative",padding:"3px 10px 3px 12px",
+      borderLeft:`1px solid ${D.line}`,borderRight:`1px solid ${D.line}`}}>
+      <div style={{fontFamily:"'Orbitron',monospace",fontSize:"clamp(18px,1.5vw,24px)",fontWeight:900,
+        color:D.text,letterSpacing:"0.08em",
+        textShadow:`0 0 12px ${D.cyan}66`}}>
+        {n.toLocaleTimeString("pt-PT")}
+      </div>
+      <div style={{fontFamily:"'Orbitron',monospace",fontSize:"clamp(9px,0.7vw,11px)",color:D.muted,
+        textTransform:"uppercase",letterSpacing:"0.18em",fontWeight:600,marginTop:"1px"}}>
+        {n.toLocaleDateString("pt-PT",{weekday:"short",day:"2-digit",month:"short"})}
+      </div>
     </div>
   );
 }
@@ -83,46 +125,61 @@ function BoardCell({m, D}){
 
   return(
     <div style={{
-      background:D.card,
-      border:`1px solid ${prio?D.yellow+"44":D.line}`,
+      position:"relative",
+      background:`linear-gradient(180deg, ${D.card} 0%, ${D.cardB} 100%)`,
+      border:`1px solid ${prio?D.yellow+"66":D.line}`,
       borderTop:`3px solid ${barCol}`,
-      borderRadius:"8px",
-      padding:"10px 12px",
-      display:"flex",flexDirection:"column",gap:"6px",
-      boxShadow:run?`0 0 14px ${D.green}18`:"none",
+      padding:"12px 14px 10px",
+      display:"flex",flexDirection:"column",gap:"7px",
+      boxShadow: run
+        ? `0 0 0 1px ${D.green}33, 0 0 18px ${D.green}26`
+        : prio ? `0 0 0 1px ${D.yellow}22` : "none",
       overflow:"hidden",
+      clipPath:"polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
     }}>
+      {/* scan sweep no card em curso */}
+      {run && (
+        <div style={{position:"absolute",inset:0,pointerEvents:"none",
+          background:`linear-gradient(110deg, transparent 40%, ${D.green}14 50%, transparent 60%)`,
+          backgroundSize:"200% 100%",
+          animation:"hudScan 4.5s linear infinite",zIndex:0}}/>
+      )}
+      <HudCorners color={prio?D.yellow:run?D.green:D.blue} size={9} thickness={1.5} inset={2} opacity={0.7}/>
+
       {/* NS — protagonista */}
-      <div style={{fontFamily:"'Orbitron',monospace",fontSize:"13px",fontWeight:900,
-        color:D.blue,letterSpacing:"0.06em",textShadow:`0 0 10px ${D.blue}55`,
-        whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+      <div style={{position:"relative",fontFamily:"'Orbitron',monospace",
+        fontSize:"clamp(15px,1.25vw,20px)",fontWeight:900,
+        color:D.blue,letterSpacing:"0.07em",textShadow:`0 0 12px ${D.blue}66`,
+        whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",zIndex:1}}>
         {m.serie||"—"}
       </div>
       {/* Modelo */}
-      <div style={{fontFamily:"monospace",fontSize:"10px",color:D.text,opacity:0.65,
-        whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",marginTop:"-3px"}}>
+      <div style={{position:"relative",fontFamily:"monospace",
+        fontSize:"clamp(10px,0.78vw,12px)",color:D.text,opacity:0.7,
+        whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",marginTop:"-4px",zIndex:1}}>
         {m.modelo||"—"}
       </div>
 
       {/* Badges */}
       {(prio||rLabel)&&(
-        <div style={{display:"flex",gap:"4px",flexWrap:"wrap"}}>
-          {prio&&<span style={{fontFamily:"monospace",fontSize:"7px",padding:"1px 5px",borderRadius:"20px",
-            background:`${D.yellow}18`,color:D.yellow,border:`1px solid ${D.yellow}44`}}>⚑ PRIO</span>}
-          {rLabel&&<span style={{fontFamily:"monospace",fontSize:"7px",padding:"1px 5px",borderRadius:"20px",
-            background:`${rColor}18`,color:rColor,border:`1px solid ${rColor}44`}}>⬡ {rLabel}</span>}
+        <div style={{position:"relative",display:"flex",gap:"4px",flexWrap:"wrap",zIndex:1}}>
+          {prio&&<HudTag color={D.yellow} label="◤ PRIO"/>}
+          {rLabel&&<HudTag color={rColor} label={`◇ ${rLabel}`}/>}
         </div>
       )}
 
       {/* Tarefas compactas */}
       {tasks.length>0&&(
-        <div style={{display:"flex",flexWrap:"wrap",gap:"3px"}}>
+        <div style={{position:"relative",display:"flex",flexWrap:"wrap",gap:"3px",zIndex:1}}>
           {tasks.map((t,i)=>(
-            <span key={i} style={{fontFamily:"monospace",fontSize:"8px",padding:"1px 6px",borderRadius:"20px",
-              background:t.concluida?`${D.green}14`:`${D.blue}14`,
+            <span key={i} style={{fontFamily:"monospace",
+              fontSize:"clamp(9px,0.72vw,11px)",padding:"2px 7px",
+              background:t.concluida?`${D.green}1a`:`${D.blue}14`,
               color:t.concluida?D.green:D.blue,
-              border:`1px solid ${t.concluida?D.green:D.blue}2A`,
-              textDecoration:t.concluida?"line-through":"none"}}>
+              border:`1px solid ${t.concluida?D.green:D.blue}3a`,
+              textDecoration:t.concluida?"line-through":"none",
+              clipPath:"polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px)",
+              fontWeight:600,letterSpacing:"0.02em"}}>
               {t.texto}
             </span>
           ))}
@@ -131,23 +188,32 @@ function BoardCell({m, D}){
 
       {/* Progress */}
       {tasks.length>0&&(
-        <div style={{height:"2px",borderRadius:"2px",background:D.sub,overflow:"hidden"}}>
+        <div style={{position:"relative",zIndex:1,height:"3px",background:D.sub,overflow:"hidden"}}>
           <div style={{height:"100%",width:`${pct}%`,
-            background:`linear-gradient(90deg,${D.pink},${D.blue})`,transition:"width 0.5s"}}/>
+            background:`linear-gradient(90deg,${D.pink},${D.blue},${D.cyan})`,
+            boxShadow:`0 0 8px ${D.blue}88`,
+            transition:"width 0.5s"}}/>
         </div>
       )}
 
       {/* Timer — fundo */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:"auto"}}>
-        <div style={{display:"flex",alignItems:"center",gap:"4px"}}>
-          <div style={{width:"5px",height:"5px",borderRadius:"50%",background:barCol,
+      <div style={{position:"relative",zIndex:1,display:"flex",alignItems:"center",
+        justifyContent:"space-between",marginTop:"auto",paddingTop:"4px",
+        borderTop:`1px dashed ${D.line}`}}>
+        <div style={{display:"flex",alignItems:"center",gap:"5px"}}>
+          <div style={{width:"6px",height:"6px",background:barCol,
+            boxShadow:`0 0 8px ${barCol}`,
+            clipPath:"polygon(50% 0, 100% 50%, 50% 100%, 0 50%)",
             animation:run?"blink 1.2s ease-in-out infinite":"none"}}/>
-          <span style={{fontFamily:"monospace",fontSize:"7px",color:D.muted,letterSpacing:"0.08em"}}>
+          <span style={{fontFamily:"'Orbitron',monospace",
+            fontSize:"clamp(8px,0.65vw,10px)",fontWeight:700,
+            color:barCol,letterSpacing:"0.14em"}}>
             {run?"EM CURSO":"PAUSADO"}
           </span>
         </div>
-        <div style={{fontFamily:"'Orbitron',monospace",fontSize:"14px",fontWeight:900,
-          color:barCol,letterSpacing:"0.04em",textShadow:`0 0 8px ${barCol}55`}}>
+        <div style={{fontFamily:"'Orbitron',monospace",
+          fontSize:"clamp(16px,1.4vw,22px)",fontWeight:900,
+          color:barCol,letterSpacing:"0.04em",textShadow:`0 0 10px ${barCol}66`}}>
           {fmtHMS(elapsed)}
         </div>
       </div>
@@ -160,13 +226,12 @@ function BoardCell({m, D}){
 // ─────────────────────────────────────────────────────────────────────────────
 function BigBoard({items, D}){
   const n = items.length;
-  // Colunas fixas baseadas na contagem — nunca deixar sobrar
-  const cols = n<=4?2:n<=6?3:n<=9?3:n<=12?4:n<=16?4:5;
+  const cols = n<=2?2:n<=4?2:n<=6?3:n<=9?3:n<=12?4:n<=16?4:5;
   return(
     <div style={{
       display:"grid",
       gridTemplateColumns:`repeat(${cols},1fr)`,
-      gap:"8px",
+      gap:"10px",
       flex:1,
       overflow:"hidden",
       alignContent:"start",
@@ -370,76 +435,105 @@ function RowItem({m, idx, D, accent, showTimer=true, showDate=false}){
 
   return(
     <div style={{
+      position:"relative",
       display:"grid",
       gridTemplateColumns:"38% 1fr auto",
       alignItems:"center",gap:0,
-      background:idx%2===0?D.card:D.cardB,
-      border:`1px solid ${prio?D.yellow+"33":D.line}`,
-      borderLeft:`3px solid ${barCol}`,
-      borderRadius:"7px",overflow:"hidden",
-      minHeight:"52px",
+      background:`linear-gradient(90deg, ${idx%2===0?D.card:D.cardB} 0%, ${D.card} 100%)`,
+      border:`1px solid ${prio?D.yellow+"55":D.line}`,
+      borderLeft:`4px solid ${barCol}`,
+      overflow:"hidden",
+      minHeight:"60px",
+      boxShadow: run && !isCon ? `0 0 0 1px ${D.green}22, 0 0 12px ${D.green}1a` : "none",
+      clipPath:"polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))",
     }}>
+      {/* scan sweep nas linhas em curso */}
+      {run && !isCon && (
+        <div style={{position:"absolute",inset:0,pointerEvents:"none",
+          background:`linear-gradient(110deg, transparent 45%, ${D.green}10 50%, transparent 55%)`,
+          backgroundSize:"200% 100%",
+          animation:"hudScan 5s linear infinite",zIndex:0}}/>
+      )}
+
       {/* Col A — NS + Modelo + badges */}
-      <div style={{padding:"9px 14px",borderRight:`1px solid ${D.line}`,minWidth:0}}>
-        <div style={{fontFamily:"'Orbitron',monospace",fontSize:"14px",fontWeight:900,
-          color:accent,letterSpacing:"0.07em",textShadow:`0 0 10px ${accent}44`,
+      <div style={{position:"relative",zIndex:1,padding:"10px 16px",
+        borderRight:`1px solid ${D.line}`,minWidth:0}}>
+        <div style={{fontFamily:"'Orbitron',monospace",
+          fontSize:"clamp(15px,1.3vw,20px)",fontWeight:900,
+          color:accent,letterSpacing:"0.08em",textShadow:`0 0 10px ${accent}55`,
           whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
           {m.serie||"—"}
         </div>
-        <div style={{fontFamily:"monospace",fontSize:"9px",color:D.text,opacity:0.6,marginTop:"2px",
+        <div style={{fontFamily:"monospace",
+          fontSize:"clamp(10px,0.78vw,12px)",color:D.text,opacity:0.65,marginTop:"3px",
           whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
           {m.modelo}
         </div>
         {(prio||rLabel)&&(
-          <div style={{display:"flex",gap:"4px",marginTop:"3px",flexWrap:"wrap"}}>
-            {prio&&<span style={{fontFamily:"monospace",fontSize:"7px",padding:"1px 5px",borderRadius:"20px",
-              background:`${D.yellow}18`,color:D.yellow,border:`1px solid ${D.yellow}44`}}>⚑ PRIO</span>}
-            {rLabel&&<span style={{fontFamily:"monospace",fontSize:"7px",padding:"1px 5px",borderRadius:"20px",
-              background:`${rColor}18`,color:rColor,border:`1px solid ${rColor}44`}}>⬡ {rLabel}</span>}
+          <div style={{display:"flex",gap:"4px",marginTop:"5px",flexWrap:"wrap"}}>
+            {prio&&<HudTag color={D.yellow} label="◤ PRIO"/>}
+            {rLabel&&<HudTag color={rColor} label={`◇ ${rLabel}`}/>}
           </div>
         )}
       </div>
 
       {/* Col B — Tarefas + barra */}
-      <div style={{padding:"9px 12px",minWidth:0}}>
+      <div style={{position:"relative",zIndex:1,padding:"10px 14px",minWidth:0}}>
         {tasks.length===0
-          ?<span style={{fontFamily:"monospace",fontSize:"8px",color:D.sub}}>SEM TAREFAS</span>
+          ?<span style={{fontFamily:"'Orbitron',monospace",
+            fontSize:"clamp(9px,0.7vw,11px)",fontWeight:600,
+            letterSpacing:"0.15em",color:D.muted}}>— SEM TAREFAS —</span>
           :<>
-            <div style={{display:"flex",flexWrap:"wrap",gap:"4px",marginBottom:"5px"}}>
+            <div style={{display:"flex",flexWrap:"wrap",gap:"4px",marginBottom:"6px"}}>
               {tasks.map((t,i)=>(
-                <span key={i} style={{fontFamily:"monospace",fontSize:"8px",padding:"1px 7px",
-                  borderRadius:"20px",
-                  background:t.concluida?`${D.green}14`:`${accent}14`,
+                <span key={i} style={{fontFamily:"monospace",
+                  fontSize:"clamp(9px,0.72vw,11px)",padding:"2px 8px",
+                  background:t.concluida?`${D.green}1a`:`${accent}14`,
                   color:t.concluida?D.green:accent,
-                  border:`1px solid ${t.concluida?D.green:accent}2A`,
-                  textDecoration:t.concluida?"line-through":"none"}}>
+                  border:`1px solid ${t.concluida?D.green:accent}3a`,
+                  textDecoration:t.concluida?"line-through":"none",
+                  fontWeight:600,letterSpacing:"0.02em",
+                  clipPath:"polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px)"}}>
                   {t.texto}
                 </span>
               ))}
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:"6px"}}>
-              <div style={{flex:1,height:"2px",borderRadius:"2px",background:D.sub,overflow:"hidden"}}>
+            <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
+              <div style={{flex:1,height:"3px",background:D.sub,overflow:"hidden"}}>
                 <div style={{height:"100%",width:`${pct}%`,
-                  background:`linear-gradient(90deg,${D.pink},${D.blue})`,transition:"width 0.5s"}}/>
+                  background:`linear-gradient(90deg,${D.pink},${D.blue},${D.cyan})`,
+                  boxShadow:`0 0 6px ${D.blue}77`,
+                  transition:"width 0.5s"}}/>
               </div>
-              <span style={{fontFamily:"monospace",fontSize:"7px",color:D.muted,flexShrink:0}}>{done}/{tasks.length}</span>
+              <span style={{fontFamily:"'Orbitron',monospace",
+                fontSize:"clamp(9px,0.7vw,11px)",fontWeight:700,
+                color:D.muted,flexShrink:0,letterSpacing:"0.05em"}}>
+                {done}/{tasks.length}
+              </span>
             </div>
           </>}
       </div>
 
       {/* Col C — Timer ou Data */}
-      <div style={{padding:"9px 14px",borderLeft:`1px solid ${D.line}`,
-        display:"flex",flexDirection:"column",alignItems:"flex-end",gap:"3px",minWidth:"120px"}}>
+      <div style={{position:"relative",zIndex:1,padding:"10px 16px",
+        borderLeft:`1px solid ${D.line}`,
+        display:"flex",flexDirection:"column",alignItems:"flex-end",gap:"4px",
+        minWidth:"clamp(120px,11vw,170px)"}}>
         {showTimer&&(
           <>
-            <div style={{fontFamily:"'Orbitron',monospace",fontSize:"16px",fontWeight:900,
-              color:barCol,letterSpacing:"0.04em",textShadow:`0 0 8px ${barCol}44`}}>
+            <div style={{fontFamily:"'Orbitron',monospace",
+              fontSize:"clamp(18px,1.65vw,26px)",fontWeight:900,
+              color:barCol,letterSpacing:"0.04em",textShadow:`0 0 12px ${barCol}55`}}>
               {fmtHMS(elapsed)}
             </div>
-            <div style={{display:"flex",alignItems:"center",gap:"4px"}}>
-              <div style={{width:"5px",height:"5px",borderRadius:"50%",background:barCol,
+            <div style={{display:"flex",alignItems:"center",gap:"5px"}}>
+              <div style={{width:"6px",height:"6px",background:barCol,
+                boxShadow:`0 0 6px ${barCol}`,
+                clipPath:"polygon(50% 0, 100% 50%, 50% 100%, 0 50%)",
                 animation:(run&&!isCon)?"blink 1.2s ease-in-out infinite":"none"}}/>
-              <span style={{fontFamily:"monospace",fontSize:"7px",color:D.muted,letterSpacing:"0.08em"}}>
+              <span style={{fontFamily:"'Orbitron',monospace",
+                fontSize:"clamp(8px,0.65vw,10px)",fontWeight:700,
+                color:barCol,letterSpacing:"0.14em"}}>
                 {isCon?"CONCLUÍDA":run?"EM CURSO":"PAUSADO"}
               </span>
             </div>
@@ -447,19 +541,22 @@ function RowItem({m, idx, D, accent, showTimer=true, showDate=false}){
         )}
         {showDate&&(
           <>
-            <div style={{fontFamily:"monospace",fontSize:"13px",fontWeight:700,color:D.green}}>
+            <div style={{fontFamily:"'Orbitron',monospace",
+              fontSize:"clamp(14px,1.15vw,18px)",fontWeight:800,color:D.green,
+              textShadow:`0 0 10px ${D.green}55`,letterSpacing:"0.04em",
+              textTransform:"uppercase"}}>
               {fmtDate(m.dataConclusao||m.updated_date)}
             </div>
             {m.timer_accumulated_seconds>0&&(
-              <div style={{fontFamily:"'Orbitron',monospace",fontSize:"10px",color:D.muted}}>
+              <div style={{fontFamily:"'Orbitron',monospace",
+                fontSize:"clamp(10px,0.8vw,12px)",color:D.muted,letterSpacing:"0.04em"}}>
                 {fmtHMS(m.timer_accumulated_seconds)}
               </div>
             )}
           </>
         )}
         {!showTimer&&!showDate&&(
-          <span style={{fontFamily:"monospace",fontSize:"8px",padding:"3px 8px",borderRadius:"20px",
-            background:`${D.muted}12`,color:D.muted,border:`1px solid ${D.sub}`}}>FILA</span>
+          <HudTag color={D.muted} label="FILA" dim/>
         )}
       </div>
     </div>
@@ -471,9 +568,14 @@ function RowItem({m, idx, D, accent, showTimer=true, showDate=false}){
 // ─────────────────────────────────────────────────────────────────────────────
 function SecLabel({label,D}){
   return(
-    <div style={{fontFamily:"monospace",fontSize:"8px",letterSpacing:"0.12em",
-      color:D.muted,padding:"6px 0 2px",flexShrink:0}}>
-      {label}
+    <div style={{display:"flex",alignItems:"center",gap:"8px",
+      padding:"8px 0 4px",flexShrink:0}}>
+      <span style={{fontFamily:"'Orbitron',monospace",
+        fontSize:"clamp(10px,0.78vw,12px)",fontWeight:800,letterSpacing:"0.18em",
+        color:D.muted}}>
+        {label}
+      </span>
+      <div style={{flex:1,height:"1px",background:`linear-gradient(90deg,${D.muted}55,transparent)`}}/>
     </div>
   );
 }
@@ -482,25 +584,79 @@ function SecLabel({label,D}){
 //  SLIDE HEADER
 // ─────────────────────────────────────────────────────────────────────────────
 function SlideHead({title,icon,color,pulse,count,D}){
+  const iconSize = "clamp(18px,1.6vw,26px)";
   return(
-    <div style={{display:"flex",alignItems:"center",gap:"10px",flexShrink:0,marginBottom:"10px"}}>
-      <div style={{color,filter:`drop-shadow(0 0 5px ${color})`}}>{icon}</div>
-      <span style={{fontFamily:"'Orbitron',monospace",fontSize:"14px",fontWeight:900,
-        letterSpacing:"0.14em",color,textShadow:`0 0 12px ${color}55`}}>{title}</span>
-      {count!==undefined&&<span style={{fontFamily:"'Orbitron',monospace",fontSize:"20px",
-        fontWeight:900,color}}>{count}</span>}
-      {pulse&&<div style={{width:"7px",height:"7px",borderRadius:"50%",background:color,
-        animation:"blink 1s ease-in-out infinite"}}/>}
-      <div style={{flex:1,height:"1px",background:`linear-gradient(90deg,${color}44,transparent)`}}/>
+    <div style={{position:"relative",display:"flex",alignItems:"center",gap:"14px",
+      flexShrink:0,marginBottom:"14px",
+      padding:"6px 12px 6px 14px",
+      background:`linear-gradient(90deg, ${color}14 0%, transparent 80%)`,
+      borderLeft:`3px solid ${color}`,
+      clipPath:"polygon(0 0, calc(100% - 14px) 0, 100% 100%, 0 100%)",
+    }}>
+      {/* bracket esquerdo */}
+      <span style={{position:"absolute",left:0,top:0,bottom:0,width:"3px",background:color,
+        boxShadow:`0 0 12px ${color}cc`}}/>
+
+      <div style={{color,filter:`drop-shadow(0 0 8px ${color})`,display:"flex",alignItems:"center"}}>
+        {React.cloneElement(icon,{size:undefined,style:{width:iconSize,height:iconSize}})}
+      </div>
+
+      <span style={{fontFamily:"'Orbitron',monospace",
+        fontSize:"clamp(18px,1.7vw,28px)",fontWeight:900,
+        letterSpacing:"0.18em",color,
+        textShadow:`0 0 14px ${color}77, 0 0 4px ${color}aa`,
+        textTransform:"uppercase"}}>
+        {title}
+      </span>
+
+      {count!==undefined&&(
+        <div style={{display:"flex",alignItems:"baseline",gap:"6px",
+          padding:"3px 12px",
+          background:`${color}1a`,border:`1px solid ${color}55`,
+          clipPath:"polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%)"}}>
+          <span style={{fontFamily:"'Orbitron',monospace",
+            fontSize:"clamp(9px,0.75vw,11px)",fontWeight:700,letterSpacing:"0.18em",
+            color:`${color}cc`}}>×</span>
+          <span style={{fontFamily:"'Orbitron',monospace",
+            fontSize:"clamp(20px,1.9vw,30px)",fontWeight:900,color,
+            textShadow:`0 0 12px ${color}88`,letterSpacing:"0.04em",lineHeight:1}}>
+            {String(count).padStart(2,"0")}
+          </span>
+        </div>
+      )}
+
+      {pulse&&(
+        <div style={{width:"10px",height:"10px",background:color,
+          boxShadow:`0 0 12px ${color}, 0 0 24px ${color}88`,
+          clipPath:"polygon(50% 0, 100% 50%, 50% 100%, 0 50%)",
+          animation:"blink 1s ease-in-out infinite"}}/>
+      )}
+
+      <div style={{flex:1,height:"1px",
+        background:`linear-gradient(90deg,${color}66,${color}11,transparent)`}}/>
+
+      {/* tick marks na barra */}
+      <div style={{display:"flex",gap:"4px",alignItems:"center"}}>
+        {[0,1,2,3].map(i=>(
+          <div key={i} style={{width:"2px",height:i%2===0?"10px":"6px",
+            background:`${color}${i===0?"":i===1?"aa":i===2?"77":"44"}`}}/>
+        ))}
+      </div>
     </div>
   );
 }
 
 function Empty({label,D}){
   return(
-    <div style={{display:"flex",alignItems:"center",justifyContent:"center",flex:1,
-      color:D.muted,fontFamily:"monospace",fontSize:"11px",letterSpacing:"0.1em"}}>
-      {label}
+    <div style={{position:"relative",display:"flex",alignItems:"center",justifyContent:"center",flex:1,
+      flexDirection:"column",gap:"10px",
+      color:D.muted,fontFamily:"'Orbitron',monospace",
+      fontSize:"clamp(13px,1.1vw,17px)",fontWeight:600,letterSpacing:"0.22em",
+      textTransform:"uppercase"}}>
+      <div style={{position:"relative",padding:"24px 40px",border:`1px dashed ${D.muted}55`}}>
+        <HudCorners color={D.muted} size={14} thickness={2} inset={-2} opacity={0.5}/>
+        {label}
+      </div>
     </div>
   );
 }
@@ -947,147 +1103,317 @@ export default function AoVivo(){
       display:"flex",flexDirection:"column",fontFamily:"system-ui,sans-serif",
       overflow:"hidden",position:"fixed",top:0,left:0}}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap');
-        @keyframes blink{0%,100%{opacity:1}50%{opacity:0.15}}
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800;900&display=swap');
+        @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+        @keyframes hudScan{0%{background-position:200% 0}100%{background-position:-200% 0}}
+        @keyframes hudPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.08);opacity:0.7}}
+        @keyframes hudFadeIn{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}
         ::-webkit-scrollbar{width:0;height:0}
         *{box-sizing:border-box}
       `}</style>
 
       {/* ── TOPBAR ── */}
-      <div style={{display:"flex",alignItems:"center",gap:"10px",
-        padding:"7px 18px",background:D.surface,
-        borderBottom:`1px solid rgba(255,45,120,0.12)`,flexShrink:0,flexWrap:"wrap"}}>
+      <div style={{position:"relative",display:"flex",alignItems:"center",gap:"14px",
+        padding:"10px clamp(14px,1.5vw,24px)",background:D.surface,
+        borderBottom:`1px solid ${D.hudLine}`,flexShrink:0,flexWrap:"wrap",
+        boxShadow:`0 0 20px ${D.hudGlow}, inset 0 -1px 0 ${D.hudLine}`}}>
+        {/* faixa neon na borda inferior */}
+        <div style={{position:"absolute",bottom:-1,left:0,right:0,height:"1px",
+          background:`linear-gradient(90deg, transparent, ${D.pink}, ${D.blue}, ${D.cyan}, transparent)`,
+          opacity:0.7}}/>
 
         {/* Logo */}
-        <div style={{display:"flex",alignItems:"center",gap:"9px",flexShrink:0}}>
-          <img src="https://media.base44.com/images/public/69c166ad19149fb0c07883cb/a35751fd9_Gemini_Generated_Image_scmohbscmohbscmo1.png"
-            alt="" style={{width:"28px",height:"28px",objectFit:"contain",filter:`drop-shadow(0 0 5px ${D.pink}88)`}}/>
+        <div style={{display:"flex",alignItems:"center",gap:"12px",flexShrink:0,
+          paddingRight:"14px",borderRight:`1px solid ${D.line}`}}>
+          <div style={{position:"relative",padding:"3px"}}>
+            <HudCorners color={D.pink} size={8} thickness={1.5} inset={-1} opacity={0.9}/>
+            <img src="https://media.base44.com/images/public/69c166ad19149fb0c07883cb/a35751fd9_Gemini_Generated_Image_scmohbscmohbscmo1.png"
+              alt="" style={{width:"clamp(34px,2.7vw,42px)",height:"clamp(34px,2.7vw,42px)",
+              objectFit:"contain",filter:`drop-shadow(0 0 8px ${D.pink}aa)`,display:"block"}}/>
+          </div>
           <div>
-            <div style={{fontFamily:"'Orbitron',monospace",fontSize:"11px",fontWeight:900,
-              letterSpacing:"0.13em",color:D.pink}}>
-              WATCHER <span style={{color:D.muted,fontSize:"7px",fontWeight:400}}>/ AO VIVO</span>
+            <div style={{fontFamily:"'Orbitron',monospace",
+              fontSize:"clamp(13px,1.1vw,17px)",fontWeight:900,
+              letterSpacing:"0.22em",color:D.pink,
+              textShadow:`0 0 12px ${D.pink}77`,lineHeight:1}}>
+              WATCHER
             </div>
-            <div style={{fontFamily:"monospace",fontSize:"6px",color:D.muted,letterSpacing:"0.08em"}}>
-              LIVE · AUTO-REFRESH 30s
+            <div style={{display:"flex",alignItems:"center",gap:"6px",marginTop:"3px"}}>
+              <span style={{fontFamily:"'Orbitron',monospace",
+                fontSize:"clamp(9px,0.7vw,11px)",fontWeight:700,
+                letterSpacing:"0.2em",color:D.cyan}}>AO VIVO</span>
+              <span style={{fontFamily:"monospace",fontSize:"clamp(8px,0.6vw,10px)",
+                color:D.muted,letterSpacing:"0.1em"}}>· SYNC 30s</span>
             </div>
           </div>
         </div>
 
         {/* Tabs */}
-        <div style={{display:"flex",gap:"3px",flex:1,justifyContent:"center",flexWrap:"wrap"}}>
-          {SLIDES.map((s,i)=>(
-            <button key={s.id} onClick={()=>goTo(i)} style={{
-              fontFamily:"monospace",fontSize:"8px",letterSpacing:"0.06em",
-              padding:"4px 10px",borderRadius:"20px",cursor:"pointer",border:"none",
-              background:i===slide?`linear-gradient(135deg,${D.pink},${D.blue})`:D.sub,
-              color:i===slide?"#fff":D.muted,
-              fontWeight:i===slide?700:400,transition:"all 0.2s",
-            }}>{s.label}</button>
-          ))}
+        <div style={{display:"flex",gap:"4px",flex:1,justifyContent:"center",flexWrap:"wrap"}}>
+          {SLIDES.map((s,i)=>{
+            const active = i===slide;
+            return(
+              <button key={s.id} onClick={()=>goTo(i)} style={{
+                position:"relative",
+                fontFamily:"'Orbitron',monospace",
+                fontSize:"clamp(9px,0.78vw,12px)",letterSpacing:"0.14em",fontWeight:active?900:600,
+                padding:"6px 14px",cursor:"pointer",border:"none",
+                background:active
+                  ? `linear-gradient(135deg, ${D.pink}, ${D.blue})`
+                  : `${D.sub}`,
+                color:active?"#fff":D.muted,
+                textShadow:active?`0 0 8px rgba(255,255,255,0.6)`:"none",
+                boxShadow:active?`0 0 14px ${D.pink}55, 0 0 28px ${D.blue}33`:"none",
+                clipPath:"polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%)",
+                transition:"all 0.2s",
+              }}>
+                <span style={{opacity:active?1:0.55,marginRight:"6px",fontSize:"0.85em"}}>
+                  {String(i+1).padStart(2,"0")}
+                </span>
+                {s.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Controles */}
-        <div style={{display:"flex",alignItems:"center",gap:"6px",flexShrink:0}}>
+        <div style={{display:"flex",alignItems:"center",gap:"8px",flexShrink:0}}>
           <Clock D={D}/>
-          <button onClick={prev} style={{background:"transparent",border:`1px solid ${D.sub}`,borderRadius:"5px",padding:"3px 5px",cursor:"pointer",color:D.muted,display:"flex"}}><ChevronLeft size={12}/></button>
-          <button onClick={()=>sPaused(p=>!p)} style={{background:paused?`${D.yellow}18`:"transparent",border:`1px solid ${paused?D.yellow:D.sub}`,borderRadius:"5px",padding:"3px 7px",cursor:"pointer",color:paused?D.yellow:D.muted,display:"flex",alignItems:"center",gap:"3px"}}>
-            {paused?<Play size={10}/>:<Pause size={10}/>}
-            <span style={{fontFamily:"monospace",fontSize:"7px"}}>{paused?"RETOMAR":"PAUSAR"}</span>
+
+          <div style={{display:"flex",gap:"2px"}}>
+            <button onClick={prev} title="Anterior" style={{
+              background:D.sub,border:`1px solid ${D.line}`,
+              padding:"6px 8px",cursor:"pointer",color:D.text,display:"flex",
+              clipPath:"polygon(4px 0, 100% 0, 100% 100%, 0 100%, 0 4px)"}}>
+              <ChevronLeft size={14}/>
+            </button>
+            <button onClick={()=>sPaused(p=>!p)} title={paused?"Retomar":"Pausar"} style={{
+              background:paused?`${D.yellow}26`:D.sub,
+              border:`1px solid ${paused?D.yellow:D.line}`,
+              padding:"6px 12px",cursor:"pointer",
+              color:paused?D.yellow:D.text,
+              display:"flex",alignItems:"center",gap:"5px"}}>
+              {paused?<Play size={12}/>:<Pause size={12}/>}
+              <span style={{fontFamily:"'Orbitron',monospace",fontSize:"clamp(9px,0.7vw,11px)",
+                fontWeight:700,letterSpacing:"0.12em"}}>
+                {paused?"RETOMAR":"PAUSAR"}
+              </span>
+            </button>
+            <button onClick={next} title="Seguinte" style={{
+              background:D.sub,border:`1px solid ${D.line}`,
+              padding:"6px 8px",cursor:"pointer",color:D.text,display:"flex",
+              clipPath:"polygon(0 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%)"}}>
+              <ChevronRight size={14}/>
+            </button>
+          </div>
+
+          <button onClick={()=>{sDark(d=>!d);localStorage.setItem("theme",dark?"light":"dark");}}
+            title="Tema" style={{
+            background:D.sub,border:`1px solid ${D.line}`,
+            padding:"6px 8px",cursor:"pointer",color:D.text,display:"flex"}}>
+            {dark?<Sun size={13}/>:<Moon size={13}/>}
           </button>
-          <button onClick={next} style={{background:"transparent",border:`1px solid ${D.sub}`,borderRadius:"5px",padding:"3px 5px",cursor:"pointer",color:D.muted,display:"flex"}}><ChevronRight size={12}/></button>
-          <button onClick={()=>{sDark(d=>!d);localStorage.setItem("theme",dark?"light":"dark");}} style={{background:"transparent",border:`1px solid ${D.sub}`,borderRadius:"5px",padding:"3px 5px",cursor:"pointer",color:D.muted,display:"flex"}}>
-            {dark?<Sun size={11}/>:<Moon size={11}/>}
-          </button>
-          <div style={{display:"flex",alignItems:"center",gap:"3px"}}>
-            <div style={{width:"5px",height:"5px",borderRadius:"50%",background:D.green,animation:"blink 1.5s ease-in-out infinite"}}/>
-            <span style={{fontFamily:"monospace",fontSize:"7px",color:D.muted}}>LIVE</span>
+
+          {/* LIVE indicator táctico */}
+          <div style={{display:"flex",alignItems:"center",gap:"6px",
+            padding:"4px 10px",
+            background:`${D.green}1a`,border:`1px solid ${D.green}55`,
+            clipPath:"polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%)"}}>
+            <div style={{width:"7px",height:"7px",background:D.green,
+              boxShadow:`0 0 8px ${D.green}, 0 0 16px ${D.green}77`,
+              clipPath:"polygon(50% 0, 100% 50%, 50% 100%, 0 50%)",
+              animation:"blink 1.2s ease-in-out infinite"}}/>
+            <span style={{fontFamily:"'Orbitron',monospace",
+              fontSize:"clamp(9px,0.7vw,11px)",fontWeight:800,
+              color:D.green,letterSpacing:"0.18em"}}>LIVE</span>
           </div>
         </div>
       </div>
 
       {/* PROGRESS BAR */}
-      <div style={{height:"2px",background:D.sub,flexShrink:0}}>
+      <div style={{position:"relative",height:"3px",background:D.sub,flexShrink:0,overflow:"hidden"}}>
         <div style={{height:"100%",width:`${prog*100}%`,
-          background:`linear-gradient(90deg,${D.pink},${D.blue})`,transition:"width 0.1s linear"}}/>
+          background:`linear-gradient(90deg,${D.pink},${D.blue},${D.cyan})`,
+          boxShadow:`0 0 10px ${D.pink}88`,
+          transition:"width 0.1s linear"}}/>
+        {/* riscas tácticas */}
+        <div style={{position:"absolute",inset:0,pointerEvents:"none",
+          backgroundImage:`repeating-linear-gradient(90deg, transparent 0, transparent ${100/SLIDES.length}%, ${D.muted}55 ${100/SLIDES.length}%, ${D.muted}55 calc(${100/SLIDES.length}% + 1px))`}}/>
       </div>
 
       {/* KPI BAR */}
-      <div style={{display:"flex",gap:"1px",background:"rgba(255,45,120,0.06)",
-        borderBottom:`1px solid rgba(255,45,120,0.08)`,flexShrink:0}}>
-        {kpis.map(k=>(
-          <div key={k.l} style={{flex:1,background:D.surface,padding:"5px 6px",
-            display:"flex",flexDirection:"column",alignItems:"center",gap:"1px"}}>
-            <div style={{fontFamily:"'Orbitron',monospace",fontSize:"17px",fontWeight:900,color:k.c}}>
-              {loading?"…":k.v}
+      <div style={{display:"flex",gap:"1px",
+        background:`linear-gradient(180deg, ${D.scanBg}, transparent)`,
+        borderBottom:`1px solid ${D.line}`,flexShrink:0}}>
+        {kpis.map((k,i)=>{
+          const isActive = (i===0&&SLIDES[slide].id==="andamento") ||
+                           (i===1&&SLIDES[slide].id==="prioritarias") ||
+                           (i===2&&SLIDES[slide].id==="timeline") ||
+                           (i===3&&SLIDES[slide].id==="fila_acp") ||
+                           (i===4&&SLIDES[slide].id==="nts") ||
+                           (i===5&&SLIDES[slide].id==="recon") ||
+                           (i===6&&SLIDES[slide].id==="concluidas");
+          return(
+            <div key={k.l} style={{position:"relative",flex:1,
+              background:isActive?`linear-gradient(180deg, ${k.c}14, ${D.surface})`:D.surface,
+              padding:"clamp(7px,0.8vw,11px) clamp(6px,0.8vw,10px)",
+              display:"flex",flexDirection:"column",alignItems:"center",gap:"3px",
+              borderTop:isActive?`2px solid ${k.c}`:`2px solid transparent`,
+              transition:"all 0.3s"}}>
+              {/* tick lateral */}
+              <div style={{position:"absolute",top:"50%",left:0,transform:"translateY(-50%)",
+                width:"2px",height:"60%",background:k.c,opacity:0.25}}/>
+              <div style={{fontFamily:"'Orbitron',monospace",
+                fontSize:"clamp(20px,1.95vw,32px)",fontWeight:900,color:k.c,
+                textShadow:isActive?`0 0 14px ${k.c}aa`:`0 0 8px ${k.c}44`,
+                letterSpacing:"0.04em",lineHeight:1}}>
+                {loading?"··":String(k.v).padStart(2,"0")}
+              </div>
+              <div style={{fontFamily:"'Orbitron',monospace",
+                fontSize:"clamp(8px,0.7vw,11px)",fontWeight:700,
+                color:isActive?k.c:D.muted,
+                letterSpacing:"0.16em",textAlign:"center",
+                opacity:isActive?1:0.75}}>
+                {k.l}
+              </div>
             </div>
-            <div style={{fontFamily:"monospace",fontSize:"6px",color:D.muted,
-              letterSpacing:"0.07em",textAlign:"center"}}>{k.l}</div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* ── SLIDE CONTENT — ocupa tudo, sem overflow ── */}
-      <div style={{flex:1,padding:"14px 20px",overflow:"hidden",display:"flex",flexDirection:"column",position:"relative"}}>
-        {/* Jordan mascote */}
+      <div style={{flex:1,padding:"clamp(14px,1.4vw,22px) clamp(18px,1.8vw,28px)",
+        overflow:"hidden",display:"flex",flexDirection:"column",position:"relative"}}>
+
+        {/* Grid HUD de fundo (dark only) */}
+        {dark && (
+          <div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:0,
+            backgroundImage:`
+              linear-gradient(${D.hudLine} 1px, transparent 1px),
+              linear-gradient(90deg, ${D.hudLine} 1px, transparent 1px)
+            `,
+            backgroundSize:"60px 60px",
+            opacity:0.06,
+            maskImage:"radial-gradient(ellipse at center, black 30%, transparent 80%)",
+            WebkitMaskImage:"radial-gradient(ellipse at center, black 30%, transparent 80%)"}}/>
+        )}
+
+        {/* Slide counter big — canto superior direito do conteúdo */}
+        <div style={{position:"absolute",top:"clamp(8px,0.9vw,14px)",right:"clamp(18px,1.8vw,28px)",
+          zIndex:2,display:"flex",alignItems:"baseline",gap:"4px",
+          fontFamily:"'Orbitron',monospace",pointerEvents:"none"}}>
+          <span style={{fontSize:"clamp(26px,2.4vw,38px)",fontWeight:900,
+            color:D.pink,textShadow:`0 0 14px ${D.pink}66`,
+            letterSpacing:"0.04em",lineHeight:1}}>
+            {String(slide+1).padStart(2,"0")}
+          </span>
+          <span style={{fontSize:"clamp(11px,0.9vw,14px)",fontWeight:700,
+            color:D.muted,letterSpacing:"0.18em"}}>
+            / {String(SLIDES.length).padStart(2,"0")}
+          </span>
+        </div>
+
+        {/* Jordan mascote — com reticle táctico */}
         <div style={{
           position:"absolute",bottom:0,right:0,
-          width:"22%",maxWidth:"220px",
+          width:"clamp(180px,22%,260px)",
+          height:"clamp(180px,22vw,260px)",
           pointerEvents:"none",
           zIndex:0,
-          display:"flex",
-          alignItems:"flex-end",
-          justifyContent:"flex-end",
+          display:"flex",alignItems:"flex-end",justifyContent:"flex-end",
         }}>
-          {/* Neon rosa ao redor — camada de glow */}
+          {/* Reticle de targeting */}
+          <div style={{position:"absolute",inset:"6%",pointerEvents:"none",opacity:0.35}}>
+            <HudCorners color={D.pink} size={18} thickness={2} inset={0} opacity={0.85}/>
+            {/* Cruz central no reticle */}
+            <div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",
+              width:"10px",height:"10px"}}>
+              <div style={{position:"absolute",top:0,bottom:0,left:"50%",width:"1px",
+                background:D.pink,boxShadow:`0 0 6px ${D.pink}`}}/>
+              <div style={{position:"absolute",left:0,right:0,top:"50%",height:"1px",
+                background:D.pink,boxShadow:`0 0 6px ${D.pink}`}}/>
+            </div>
+          </div>
+          {/* Neon glow */}
           <div style={{
             position:"absolute",bottom:0,right:0,
             width:"100%",height:"100%",
             backgroundImage:`url(${JORDAN_URL})`,
-            backgroundSize:"contain",
-            backgroundRepeat:"no-repeat",
+            backgroundSize:"contain",backgroundRepeat:"no-repeat",
             backgroundPosition:"bottom right",
-            filter:"blur(18px) brightness(1.2) saturate(3) hue-rotate(-10deg)",
-            opacity:0.55,
+            filter:"blur(22px) brightness(1.2) saturate(3) hue-rotate(-10deg)",
+            opacity:0.5,
           }}/>
-          {/* Imagem principal com opacidade alta */}
-          <img
-            src={JORDAN_URL}
-            alt=""
+          {/* Imagem principal */}
+          <img src={JORDAN_URL} alt=""
             style={{
-              position:"relative",
-              width:"100%",
-              objectFit:"contain",
-              objectPosition:"bottom right",
-              opacity:0.88,
-              filter:"drop-shadow(0 0 22px #FF2D78cc) drop-shadow(0 0 8px #FF2D78aa) drop-shadow(0 0 4px rgba(255,255,255,0.25))",
+              position:"relative",width:"100%",
+              objectFit:"contain",objectPosition:"bottom right",
+              opacity:0.82,
+              filter:`drop-shadow(0 0 24px ${D.pink}cc) drop-shadow(0 0 8px ${D.pink}aa) drop-shadow(0 0 4px rgba(255,255,255,0.2))`,
               display:"block",
-            }}
-          />
+            }}/>
         </div>
+
         {loading
-          ?<div style={{display:"flex",alignItems:"center",justifyContent:"center",flex:1,position:"relative",zIndex:1}}>
-            <span style={{fontFamily:"'Orbitron',monospace",fontSize:"12px",color:D.muted,
-              animation:"blink 1s ease-in-out infinite"}}>A CARREGAR...</span>
+          ?<div style={{display:"flex",alignItems:"center",justifyContent:"center",flex:1,
+            position:"relative",zIndex:1,flexDirection:"column",gap:"14px"}}>
+            <div style={{position:"relative",padding:"30px 60px"}}>
+              <HudCorners color={D.pink} size={16} thickness={2} inset={0} opacity={0.9}/>
+              <span style={{fontFamily:"'Orbitron',monospace",
+                fontSize:"clamp(14px,1.1vw,18px)",fontWeight:800,
+                color:D.pink,letterSpacing:"0.32em",textShadow:`0 0 10px ${D.pink}77`,
+                animation:"blink 1s ease-in-out infinite"}}>
+                A CARREGAR...
+              </span>
+            </div>
           </div>
           :<div style={{position:"relative",zIndex:1,flex:1,display:"flex",flexDirection:"column"}}>{slides[SLIDES[slide].id]}</div>}
       </div>
 
       {/* FOOTER */}
-      <div style={{padding:"4px 18px",background:D.surface,
-        borderTop:`1px solid rgba(255,45,120,0.08)`,
-        display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
-        <div style={{display:"flex",gap:"4px"}}>
+      <div style={{position:"relative",padding:"6px clamp(14px,1.5vw,24px)",background:D.surface,
+        borderTop:`1px solid ${D.hudLine}`,
+        display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0,
+        boxShadow:`inset 0 1px 0 ${D.hudLine}`}}>
+        {/* faixa neon na borda superior */}
+        <div style={{position:"absolute",top:-1,left:0,right:0,height:"1px",
+          background:`linear-gradient(90deg, transparent, ${D.cyan}, ${D.blue}, ${D.pink}, transparent)`,
+          opacity:0.6}}/>
+
+        {/* Slide dots */}
+        <div style={{display:"flex",gap:"5px",alignItems:"center"}}>
           {SLIDES.map((_,i)=>(
-            <button key={i} onClick={()=>goTo(i)} style={{
-              width:i===slide?"16px":"5px",height:"3px",borderRadius:"2px",
-              background:i===slide?`linear-gradient(90deg,${D.pink},${D.blue})`:D.sub,
-              border:"none",cursor:"pointer",transition:"width 0.3s",padding:0}}/>
+            <button key={i} onClick={()=>goTo(i)} title={SLIDES[i].label} style={{
+              width:i===slide?"clamp(22px,2vw,30px)":"clamp(8px,0.7vw,11px)",
+              height:"clamp(4px,0.4vw,6px)",
+              background:i===slide
+                ?`linear-gradient(90deg,${D.pink},${D.blue})`
+                :i<slide?`${D.muted}55`:D.sub,
+              border:"none",cursor:"pointer",
+              transition:"width 0.3s",padding:0,
+              boxShadow:i===slide?`0 0 8px ${D.pink}77`:"none",
+              clipPath:i===slide
+                ?"polygon(2px 0, 100% 0, calc(100% - 2px) 100%, 0 100%)"
+                :"none"}}/>
           ))}
         </div>
-        <div style={{fontFamily:"monospace",fontSize:"7px",color:D.muted,letterSpacing:"0.06em"}}>
-          ← → NAVEGAR · ESPAÇO PAUSAR · ESC SAIR · F11 FULLSCREEN · {slide+1}/{SLIDES.length}
+
+        <div style={{fontFamily:"'Orbitron',monospace",
+          fontSize:"clamp(9px,0.7vw,11px)",fontWeight:600,
+          color:D.muted,letterSpacing:"0.16em",
+          display:"flex",gap:"clamp(8px,1vw,16px)",flexWrap:"wrap",justifyContent:"center"}}>
+          <span><span style={{color:D.cyan}}>←→</span> NAV</span>
+          <span><span style={{color:D.cyan}}>SPACE</span> PAUSE</span>
+          <span><span style={{color:D.cyan}}>ESC</span> EXIT</span>
+          <span><span style={{color:D.cyan}}>F11</span> FULL</span>
         </div>
-        <div style={{fontFamily:"monospace",fontSize:"7px",color:D.muted}}>STILL OFICINA · PORTAL DA FROTA ACP</div>
+
+        <div style={{fontFamily:"'Orbitron',monospace",
+          fontSize:"clamp(9px,0.7vw,11px)",fontWeight:700,
+          color:D.muted,letterSpacing:"0.18em"}}>
+          STILL OFICINA · <span style={{color:D.pink}}>FROTA ACP</span>
+        </div>
       </div>
     </div>
   );
