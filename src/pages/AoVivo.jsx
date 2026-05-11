@@ -125,46 +125,6 @@ function Clock({D}){
 // ─────────────────────────────────────────────────────────────────────────────
 //  REACTOR GAUGE
 // ─────────────────────────────────────────────────────────────────────────────
-function ReactorGauge({run, pct, elapsed, barCol}){
-  // Arc reactor SVG circular estilo mockup
-  const r = 42, circ = 2*Math.PI*r;
-  const offset = circ - (pct/100)*circ;
-  return(
-    <div style={{position:"relative",width:90,height:90,flexShrink:0,display:"grid",placeItems:"center"}}>
-      <svg viewBox="0 0 100 100" width="90" height="90" style={{position:"absolute",inset:0}}>
-        {/* outer gold ring */}
-        <circle cx="50" cy="50" r="48" fill="none" stroke="#888888" strokeWidth="1" opacity="0.5"/>
-        {/* progress arc — vermelho/gold */}
-        <circle cx="50" cy="50" r={r} fill="none"
-          stroke={run?"#c8c8c8":"rgba(210,210,210,0.4)"} strokeWidth="2.5"
-          strokeDasharray={circ} strokeDashoffset={offset}
-          strokeLinecap="round"
-          style={{transformOrigin:"50px 50px",transform:"rotate(-90deg)",
-            filter:run?`drop-shadow(0 0 5px #c8c8c8)`:"none",transition:"stroke-dashoffset 1s"}}/>
-        {/* divisores internos estilo reactor */}
-        {[0,45,90,135,180,225,270,315].map((a,i)=>{
-          const rad=a*Math.PI/180, x1=50+32*Math.cos(rad), y1=50+32*Math.sin(rad);
-          const x2=50+38*Math.cos(rad), y2=50+38*Math.sin(rad);
-          return<line key={i} x1={x1} y1={y1} x2={x2} y2={y2}
-            stroke={run?"#c8c8c8":"rgba(210,210,210,0.35)"} strokeWidth="1"/>;
-        })}
-        {/* inner ring */}
-        <circle cx="50" cy="50" r="28" fill="none" stroke="rgba(210,210,210,0.2)" strokeWidth="0.8"/>
-      </svg>
-      {/* core — arc reactor centre */}
-      <div style={{width:20,height:20,borderRadius:"50%",
-        background:`radial-gradient(circle,${run?"#5cffff":"rgba(92,255,255,0.4)"} 0%,${run?"rgba(92,255,255,0.3)":"rgba(92,255,255,0.05)"} 70%)`,
-        boxShadow:run?`0 0 12px #5cffff,0 0 24px rgba(92,255,255,0.5)`:"0 0 6px rgba(92,255,255,0.2)",
-        animation:run?"helmetPulse 2s infinite":"none",zIndex:2}}/>
-      {/* label abaixo */}
-      <div style={{position:"absolute",bottom:2,left:0,right:0,textAlign:"center",
-        fontFamily:"'Orbitron',monospace",fontSize:"clamp(7px,0.6vw,8px)",fontWeight:700,
-        color:run?"#c8c8c8":"rgba(210,210,210,0.5)",letterSpacing:"0.1em"}}>
-        {fmtHMS(elapsed).slice(0,5)} / SHIFT
-      </div>
-    </div>
-  );
-}
 
 function BoardCell({m, D}){
   const elapsed = useLiveTimer(m);
@@ -181,111 +141,115 @@ function BoardCell({m, D}){
 
   return(
     <div style={{
-      position:"relative",
-      display:"flex",flexDirection:"row",alignItems:"center",gap:14,
-      padding:"10px 16px 10px 12px",
+      position:"relative",height:"100%",
+      display:"flex",flexDirection:"column",gap:6,
+      padding:"12px 14px 10px",
       background:run
-        ? `linear-gradient(135deg,rgba(200,16,46,0.22),rgba(100,8,14,0.95))`
-        : `linear-gradient(135deg,rgba(200,16,46,0.12),rgba(30,7,11,0.97))`,
+        ? `linear-gradient(135deg,rgba(200,16,46,0.28) 0%,rgba(25,5,8,0.98) 100%)`
+        : `linear-gradient(135deg,rgba(200,16,46,0.08) 0%,rgba(12,3,6,0.98) 100%)`,
       border:`1px solid ${borderCol}`,
+      borderTop:`3px solid ${run?"#e8e8e8":prio?"rgba(200,200,200,0.5)":"rgba(200,16,46,0.5)"}`,
       boxShadow:run
-        ? `0 0 24px rgba(210,210,210,0.25),0 0 48px rgba(200,16,46,0.15),inset 0 0 20px rgba(200,16,46,0.1)`
-        : prio
-        ? `0 0 16px rgba(210,210,210,0.15),inset 0 0 14px rgba(200,16,46,0.08)`
-        : `0 0 10px rgba(200,16,46,0.1)`,
+        ? `0 0 20px rgba(200,16,46,0.3),inset 0 0 24px rgba(200,16,46,0.08)`
+        : `0 0 8px rgba(200,16,46,0.08)`,
       overflow:"hidden",
-      clipPath:"polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px))",
+      clipPath:"polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))",
     }}>
-      {/* rivets */}
-      {[{top:6,left:6},{top:6,right:6},{bottom:6,left:6},{bottom:6,right:6}].map((pos,i)=>(
-        <span key={i} style={{position:"absolute",...pos,width:5,height:5,borderRadius:"50%",
-          background:`radial-gradient(circle,#e8e8e8 30%,#999999 70%)`,
-          boxShadow:`0 0 4px rgba(220,220,220,0.8)`,zIndex:4,pointerEvents:"none"}}/>
+      {/* rivets prata nos cantos */}
+      {[{top:5,left:5},{top:5,right:5},{bottom:5,left:5},{bottom:5,right:5}].map((pos,i)=>(
+        <span key={i} style={{position:"absolute",...pos,width:4,height:4,borderRadius:"50%",
+          background:"radial-gradient(circle,#e0e0e0 30%,#888 70%)",
+          boxShadow:"0 0 3px rgba(200,200,200,0.5)",zIndex:4,pointerEvents:"none"}}/>
       ))}
-      {/* scan sweep */}
+      {/* scan sweep — só running */}
       {run&&<div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:0,
-        background:`linear-gradient(110deg,transparent 35%,rgba(210,210,210,0.06) 50%,transparent 65%)`,
-        backgroundSize:"200% 100%",animation:"hudScan 4s linear infinite"}}/>}
-      {prio&&!run&&<div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:0,
-        background:`linear-gradient(135deg,rgba(245,158,11,0.06),transparent 60%)`,
-        animation:"hudPulse 2.5s ease-in-out infinite"}}/>}
+        background:`linear-gradient(110deg,transparent 30%,rgba(200,16,46,0.08) 50%,transparent 70%)`,
+        backgroundSize:"200% 100%",animation:"hudScan 5s linear infinite"}}/>}
 
-      {/* REACTOR GAUGE — esquerda */}
-      <ReactorGauge run={run} pct={pct} elapsed={elapsed} barCol={barCol}/>
-
-      {/* CONTENT — centro */}
-      <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:6,zIndex:1}}>
-        {/* status tag + timer */}
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
-          <div style={{display:"flex",alignItems:"center",gap:6}}>
-            <HudTag color={barCol} label={run?"◆ ACTIVE":"◌ PAUSED"} glow={run}/>
-            {prio&&<HudTag color={D.yellow} label="⚑ PRIO" glow={true}/>}
-            {rLabel&&<HudTag color={rColor} label={`◇ ${rLabel}`}/>}
-          </div>
-          {/* TIMER — grande, à direita */}
-          <div style={{fontFamily:"'Orbitron',monospace",
-            fontSize:run?"clamp(22px,2vw,30px)":"clamp(16px,1.4vw,22px)",fontWeight:900,
-            color:run?"#e8e8e8":"rgba(210,210,210,0.5)",letterSpacing:"0.06em",
-            textShadow:run?`0 0 16px rgba(220,220,220,0.8),0 0 32px rgba(210,210,210,0.2)`:"none",
-            transition:"font-size 0.3s"}}>
-            {fmtHMS(elapsed)}
-          </div>
+      {/* ── ROW 1: status dot + label + TIMER ── */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,zIndex:1}}>
+        <div style={{display:"flex",alignItems:"center",gap:6}}>
+          <span style={{width:7,height:7,borderRadius:"50%",flexShrink:0,
+            background:run?"#e8e8e8":"rgba(200,200,200,0.3)",
+            boxShadow:run?"0 0 8px #e8e8e8,0 0 16px rgba(220,220,220,0.4)":"none",
+            animation:run?"blink 1.2s ease-in-out infinite":"none"}}/>
+          <span style={{fontFamily:"'Orbitron',monospace",fontSize:"clamp(8px,0.62vw,10px)",
+            fontWeight:700,letterSpacing:"0.14em",
+            color:run?"#e8e8e8":"rgba(200,200,200,0.4)"}}>
+            {run?"ACTIVE":"PAUSED"}
+          </span>
+          {prio&&<HudTag color={D.yellow} label="⚑ PRIO" glow={true}/>}
+          {rLabel&&<HudTag color={rColor} label={`◇ ${rLabel}`}/>}
         </div>
-
-        {/* NS + modelo */}
-        <div style={{display:"flex",alignItems:"baseline",gap:10}}>
-          <div style={{fontFamily:"'Orbitron',monospace",
-            fontSize:run?"clamp(17px,1.5vw,22px)":"clamp(14px,1.2vw,18px)",fontWeight:900,
-            color:"#e8e8e8",letterSpacing:"0.08em",
-            textShadow:run?`0 0 16px rgba(220,220,220,0.8),0 0 32px rgba(210,210,210,0.2)`:`0 0 10px rgba(210,210,210,0.4)`,
-            whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",
-            transition:"font-size 0.3s"}}>
-            ▶ {m.serie||"—"}
-          </div>
-          <div style={{fontFamily:"'JetBrains Mono',monospace",
-            fontSize:"clamp(9px,0.75vw,11px)",color:"#a8a8a8",flexShrink:0}}>
-            {m.modelo||"—"}
-          </div>
+        <div style={{fontFamily:"'Orbitron',monospace",
+          fontSize:run?"clamp(16px,1.45vw,21px)":"clamp(12px,1vw,15px)",fontWeight:900,
+          color:run?"#e8e8e8":"rgba(200,200,200,0.35)",letterSpacing:"0.05em",
+          textShadow:run?"0 0 12px rgba(220,220,220,0.6),0 0 24px rgba(200,16,46,0.3)":"none",
+          transition:"all 0.3s"}}>
+          {fmtHMS(elapsed)}
         </div>
+      </div>
 
-        {/* Tarefas */}
-        {tasks.length>0&&(
-          <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"clamp(8px,0.65vw,9px)",
-              color:"rgba(210,210,210,0.5)",letterSpacing:"0.16em",flexShrink:0}}>◆ TASK</span>
-            <span style={{fontFamily:"'JetBrains Mono',monospace",
-              fontSize:"clamp(9px,0.75vw,11px)",color:"#a8a8a8",
-              whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-              {tasks.filter(t=>!t.concluida)[0]?.texto || tasks[0]?.texto || "—"}
-            </span>
-          </div>
-        )}
+      {/* ── ROW 2: NS grande ── */}
+      <div style={{zIndex:1}}>
+        <div style={{fontFamily:"'Orbitron',monospace",
+          fontSize:run?"clamp(15px,1.4vw,20px)":"clamp(13px,1.15vw,17px)",fontWeight:900,
+          color:"#e8e8e8",letterSpacing:"0.07em",lineHeight:1.1,
+          textShadow:run?"0 0 12px rgba(220,220,220,0.5),0 0 20px rgba(200,16,46,0.3)":"0 0 6px rgba(180,180,180,0.25)",
+          whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",
+          transition:"font-size 0.3s"}}>
+          {m.serie||"—"}
+        </div>
+        <div style={{fontFamily:"'JetBrains Mono',monospace",
+          fontSize:"clamp(9px,0.7vw,11px)",color:"rgba(160,160,160,0.7)",marginTop:2,
+          whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+          {m.modelo||"—"}
+        </div>
+      </div>
 
-        {/* Chips extra + progress */}
-        <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+      {/* ── ROW 3: primeira tarefa ── */}
+      {tasks.length>0&&(
+        <div style={{display:"flex",alignItems:"center",gap:6,zIndex:1,
+          padding:"5px 8px",
+          background:"rgba(200,16,46,0.12)",
+          borderLeft:"2px solid rgba(200,16,46,0.6)"}}>
+          <span style={{fontFamily:"'JetBrains Mono',monospace",
+            fontSize:"clamp(7px,0.55vw,9px)",color:"rgba(200,16,46,0.9)",
+            letterSpacing:"0.2em",flexShrink:0,fontWeight:700}}>TASK</span>
+          <span style={{fontFamily:"'JetBrains Mono',monospace",
+            fontSize:"clamp(9px,0.72vw,11px)",color:"rgba(210,210,210,0.85)",
+            whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+            {tasks.filter(t=>!t.concluida)[0]?.texto || tasks[0]?.texto}
+          </span>
+        </div>
+      )}
+
+      {/* ── ROW 4: chips ── */}
+      {tasks.length>0&&(
+        <div style={{display:"flex",flexWrap:"wrap",gap:4,zIndex:1,marginTop:"auto"}}>
           {tasks.map((t,i)=>(
             <span key={i} style={{fontFamily:"'JetBrains Mono',monospace",
-              fontSize:"clamp(8px,0.65vw,9px)",padding:"1px 7px",
-              background:t.concluida?`${D.green}18`:`rgba(210,210,210,0.08)`,
-              color:t.concluida?D.green:"#a8a8a8",
-              border:`1px solid ${t.concluida?D.green+"44":"rgba(210,210,210,0.2)"}`,
+              fontSize:"clamp(8px,0.6vw,9px)",padding:"2px 8px",
+              background:t.concluida?"rgba(34,197,94,0.12)":"rgba(200,200,200,0.07)",
+              color:t.concluida?D.green:"rgba(185,185,185,0.85)",
+              border:`1px solid ${t.concluida?"rgba(34,197,94,0.4)":"rgba(200,200,200,0.2)"}`,
               textDecoration:t.concluida?"line-through":"none",
-              clipPath:"polygon(3px 0,100% 0,calc(100% - 3px) 100%,0 100%)",
-              fontWeight:600,letterSpacing:"0.06em"}}>
+              clipPath:"polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%)",
+              fontWeight:600,letterSpacing:"0.05em"}}>
               {t.texto}
             </span>
           ))}
         </div>
+      )}
 
-        {/* Barra de progresso */}
-        {tasks.length>0&&(
-          <div style={{height:2,background:"rgba(255,255,255,0.05)",overflow:"hidden",borderRadius:1}}>
-            <div style={{height:"100%",width:`${pct}%`,
-              background:`linear-gradient(90deg,#c8102e,#c0c0c0,#e8e8e8)`,
-              boxShadow:`0 0 8px rgba(210,210,210,0.5)`,transition:"width 0.5s"}}/>
-          </div>
-        )}
-      </div>
+      {/* ── Progress bar vermelho→prata ── */}
+      {tasks.length>0&&(
+        <div style={{height:2,background:"rgba(255,255,255,0.04)",overflow:"hidden",zIndex:1}}>
+          <div style={{height:"100%",width:`${pct}%`,
+            background:`linear-gradient(90deg,#c8102e,#c0c0c0,#e8e8e8)`,
+            boxShadow:"0 0 6px rgba(200,200,200,0.35)",transition:"width 0.5s"}}/>
+        </div>
+      )}
     </div>
   );
 }
