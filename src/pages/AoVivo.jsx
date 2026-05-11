@@ -126,7 +126,7 @@ function Clock({D}){
 //  REACTOR GAUGE
 // ─────────────────────────────────────────────────────────────────────────────
 
-function BoardCell({m, D}){
+function BoardCell({m, D, isRecon=false}){
   const elapsed = useLiveTimer(m);
   const run    = m.timer_status==="running";
   const prio   = m.prioridade===true;
@@ -136,8 +136,10 @@ function BoardCell({m, D}){
   const tasks  = m.tarefas||[];
   const done   = tasks.filter(t=>t.concluida).length;
   const pct    = tasks.length?Math.round(done/tasks.length*100):0;
-  const barCol = run?"#c8c8c8":"rgba(210,210,210,0.5)";
-  const borderCol = run?"rgba(210,210,210,0.7)":prio?"rgba(210,210,210,0.45)":"rgba(210,210,210,0.2)";
+  // CORES: running=verde, paused=dourado/âmbar
+  const timerCol = run ? "#22C55E" : "#F59E0B";
+  const glowCol  = isRecon ? "138,43,226" : "155,92,246"; // roxo recon vs roxo std
+  const borderCol = run ? "rgba(34,197,94,0.6)" : prio ? "rgba(245,158,11,0.45)" : "rgba(155,92,246,0.2)";
 
   return(
     <div style={{
@@ -145,13 +147,13 @@ function BoardCell({m, D}){
       display:"flex",flexDirection:"column",gap:6,
       padding:"12px 14px 10px",
       background:run
-        ? `linear-gradient(135deg,rgba(200,16,46,0.28) 0%,rgba(25,5,8,0.98) 100%)`
-        : `linear-gradient(135deg,rgba(200,16,46,0.08) 0%,rgba(12,3,6,0.98) 100%)`,
+        ? `linear-gradient(135deg,rgba(34,197,94,0.12) 0%,rgba(14,30,16,0.98) 100%)`
+        : `linear-gradient(135deg,rgba(245,158,11,0.08) 0%,rgba(20,14,6,0.98) 100%)`,
       border:`1px solid ${borderCol}`,
-      borderTop:`3px solid ${run?"#e8e8e8":prio?"rgba(200,200,200,0.5)":"rgba(200,16,46,0.5)"}`,
+      borderTop:`3px solid ${run?"#22C55E":prio?"#F59E0B":"rgba(155,92,246,0.5)"}`,
       boxShadow:run
-        ? `0 0 20px rgba(200,16,46,0.3),inset 0 0 24px rgba(200,16,46,0.08)`
-        : `0 0 8px rgba(200,16,46,0.08)`,
+        ? `0 0 20px rgba(34,197,94,0.25),0 0 40px rgba(${glowCol},0.15),inset 0 0 20px rgba(34,197,94,0.06)`
+        : `0 0 16px rgba(${glowCol},0.2),0 0 32px rgba(${glowCol},0.08)`,
       overflow:"hidden",
       clipPath:"polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))",
     }}>
@@ -161,21 +163,23 @@ function BoardCell({m, D}){
           background:"radial-gradient(circle,#e0e0e0 30%,#888 70%)",
           boxShadow:"0 0 3px rgba(200,200,200,0.5)",zIndex:4,pointerEvents:"none"}}/>
       ))}
-      {/* scan sweep — só running */}
-      {run&&<div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:0,
-        background:`linear-gradient(110deg,transparent 30%,rgba(200,16,46,0.08) 50%,transparent 70%)`,
-        backgroundSize:"200% 100%",animation:"hudScan 5s linear infinite"}}/>}
+      {/* scan sweep — verde se running, roxo se paused */}
+      <div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:0,
+        background:run
+          ?`linear-gradient(110deg,transparent 30%,rgba(34,197,94,0.07) 50%,transparent 70%)`
+          :`linear-gradient(135deg,rgba(${glowCol},0.05),transparent 60%)`,
+        backgroundSize:"200% 100%",animation:run?"hudScan 5s linear infinite":"hudPulse 3s ease-in-out infinite"}}/>
 
       {/* ── ROW 1: status dot + label + TIMER ── */}
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,zIndex:1}}>
         <div style={{display:"flex",alignItems:"center",gap:6}}>
           <span style={{width:7,height:7,borderRadius:"50%",flexShrink:0,
-            background:run?"#e8e8e8":"rgba(200,200,200,0.3)",
-            boxShadow:run?"0 0 8px #e8e8e8,0 0 16px rgba(220,220,220,0.4)":"none",
+            background:run?"#22C55E":"#F59E0B",
+            boxShadow:run?"0 0 8px #22C55E,0 0 16px rgba(34,197,94,0.5)":"0 0 6px rgba(245,158,11,0.5)",
             animation:run?"blink 1.2s ease-in-out infinite":"none"}}/>
           <span style={{fontFamily:"'Orbitron',monospace",fontSize:"clamp(8px,0.62vw,10px)",
             fontWeight:700,letterSpacing:"0.14em",
-            color:run?"#e8e8e8":"rgba(200,200,200,0.4)"}}>
+            color:run?"#22C55E":"#F59E0B"}}>
             {run?"ACTIVE":"PAUSED"}
           </span>
           {prio&&<HudTag color={D.yellow} label="⚑ PRIO" glow={true}/>}
@@ -183,8 +187,10 @@ function BoardCell({m, D}){
         </div>
         <div style={{fontFamily:"'Orbitron',monospace",
           fontSize:run?"clamp(16px,1.45vw,21px)":"clamp(12px,1vw,15px)",fontWeight:900,
-          color:run?"#e8e8e8":"rgba(200,200,200,0.35)",letterSpacing:"0.05em",
-          textShadow:run?"0 0 12px rgba(220,220,220,0.6),0 0 24px rgba(200,16,46,0.3)":"none",
+          color:timerCol,letterSpacing:"0.05em",
+          textShadow:run
+            ?"0 0 12px rgba(34,197,94,0.7),0 0 24px rgba(34,197,94,0.3)"
+            :"0 0 10px rgba(245,158,11,0.5)",
           transition:"all 0.3s"}}>
           {fmtHMS(elapsed)}
         </div>
@@ -195,7 +201,7 @@ function BoardCell({m, D}){
         <div style={{fontFamily:"'Orbitron',monospace",
           fontSize:run?"clamp(15px,1.4vw,20px)":"clamp(13px,1.15vw,17px)",fontWeight:900,
           color:"#e8e8e8",letterSpacing:"0.07em",lineHeight:1.1,
-          textShadow:run?"0 0 12px rgba(220,220,220,0.5),0 0 20px rgba(200,16,46,0.3)":"0 0 6px rgba(180,180,180,0.25)",
+          textShadow:run?"0 0 12px rgba(220,220,220,0.5),0 0 20px rgba(34,197,94,0.2)":"0 0 6px rgba(180,180,180,0.2)",
           whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",
           transition:"font-size 0.3s"}}>
           {m.serie||"—"}
@@ -257,20 +263,38 @@ function BoardCell({m, D}){
 // ─────────────────────────────────────────────────────────────────────────────
 //  BIG BOARD — grid auto sem scroll. Calcula minmax com base no nº de itens
 // ─────────────────────────────────────────────────────────────────────────────
-function BigBoard({items, D}){
-  const n = items.length;
-  const cols = n<=2?2:n<=4?2:n<=6?3:n<=9?3:n<=12?4:n<=16?4:5;
+function BigBoard({items, D, isRecon=false}){
+  const running = items.filter(m=>m.timer_status==="running");
+  const paused  = items.filter(m=>m.timer_status!=="running");
+  const nRun = running.length, nPause = paused.length;
+  const colsRun   = nRun<=1?1:nRun<=3?nRun:nRun<=6?3:4;
+  const colsPause = nPause<=1?1:nPause<=4?2:nPause<=8?4:5;
   return(
-    <div style={{
-      display:"grid",
-      gridTemplateColumns:`repeat(${cols},1fr)`,
-      gap:"10px",
-      flex:1,
-      overflow:"hidden",
-      alignContent:"start",
-      maxHeight:"100%",
-    }}>
-      {items.map(m=><BoardCell key={m.id} m={m} D={D}/>)}
+    <div style={{display:"flex",flexDirection:"column",gap:12,flex:1,overflow:"hidden"}}>
+      {/* ── RUNNING — cards grandes ── */}
+      {running.length>0&&(
+        <div style={{display:"grid",
+          gridTemplateColumns:`repeat(${colsRun},1fr)`,
+          gap:10,flexShrink:0}}>
+          {running.map(m=>(
+            <div key={m.id} style={{minHeight:"clamp(120px,11vw,155px)"}}>
+              <BoardCell m={m} D={D} isRecon={isRecon}/>
+            </div>
+          ))}
+        </div>
+      )}
+      {/* ── PAUSED — cards compactos ── */}
+      {paused.length>0&&(
+        <div style={{display:"grid",
+          gridTemplateColumns:`repeat(${colsPause},1fr)`,
+          gap:8,flexShrink:0}}>
+          {paused.map(m=>(
+            <div key={m.id} style={{minHeight:"clamp(85px,7.5vw,110px)"}}>
+              <BoardCell m={m} D={D} isRecon={isRecon}/>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -767,16 +791,19 @@ function GanttChart({ machines, D }) {
     );
   }
 
-  const totalH = Math.max(120, blocks.length * (BAR_H + GAP));
+  // Número max de barras visíveis sem scroll (altura disponível / bar height)
+  const MAX_VISIBLE = 12;
+  const visibleBlocks = blocks.slice(0, MAX_VISIBLE);
 
   return (
-    <div style={{display:"flex",flexDirection:"column",gap:"8px",flex:1,overflowY:"auto",overflowX:"hidden"}}>
+    <div style={{display:"flex",flexDirection:"column",gap:0,flex:1,overflow:"hidden"}}>
 
-      {/* ── Régua de dias ── */}
+      {/* ── Régua de dias — sticky ── */}
       <div style={{
-        position:"relative",height:"34px",flexShrink:0,
+        position:"relative",height:"36px",flexShrink:0,
         borderBottom:`1px solid rgba(210,210,210,0.2)`,
-        background:"rgba(20,7,11,0.9)",
+        background:"rgba(14,5,9,0.97)",
+        zIndex:5,
       }}>
         {ruleDays.map((d,i) => {
           const left    = (i / numDays) * 100;
@@ -828,109 +855,92 @@ function GanttChart({ machines, D }) {
         )}
       </div>
 
-      {/* ── Área de barras ── */}
-      <div style={{position:"relative",height:`${totalH}px`,overflow:"hidden",flexShrink:0}}>
-        {/* Grade vertical de fundo */}
-        {ruleDays.map((d,i) => {
-          const left = (i / numDays) * 100;
-          const isWE = d.getDay() === 0 || d.getDay() === 6;
-          return (
-            <div key={"g"+i} style={{
-              position:"absolute",top:0,bottom:0,left:left+"%",
-              width: isWE ? (100/numDays)+"%" : "0",
-              borderLeft: i>0 ? `1px dashed ${D.line}` : "none",
-              background: isWE ? "rgba(200,16,46,0.03)" : "transparent",
-              pointerEvents:"none",zIndex:0,
-            }}/>
-          );
-        })}
+      {/* ── Área de barras — rows fixas sem overflow ── */}
+      <div style={{
+        flex:1,overflow:"hidden",
+        position:"relative",
+        display:"flex",flexDirection:"column",
+        gap:5,padding:"8px 0",
+      }}>
+        {/* Grade vertical — absolute sobre tudo */}
+        <div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:0}}>
+          {ruleDays.map((d,i)=>{
+            const left=(i/numDays)*100;
+            const isWE=d.getDay()===0||d.getDay()===6;
+            return(
+              <div key={"g"+i} style={{
+                position:"absolute",top:0,bottom:0,left:left+"%",
+                width:isWE?(100/numDays)+"%":"0",
+                borderLeft:i>0?`1px dashed rgba(210,210,210,0.06)`:"none",
+                background:isWE?"rgba(200,16,46,0.02)":"transparent",
+              }}/>
+            );
+          })}
+          {/* Linha HOJE */}
+          {nowPct>=0&&nowPct<=100&&(
+            <div style={{position:"absolute",top:0,bottom:0,left:nowPct+"%",
+              width:"2px",background:"linear-gradient(180deg,#ff2240,#d0d0d0)",
+              boxShadow:"0 0 10px rgba(255,34,64,0.6)",zIndex:5}}/>
+          )}
+        </div>
 
-        {/* Linha HOJE */}
-        {nowPct>=0 && nowPct<=100 && (
-          <div style={{
-            position:"absolute",top:0,bottom:0,left:nowPct+"%",
-            width:"2px",background:"linear-gradient(180deg,#ff2240,#d0d0d0)",
-            boxShadow:"0 0 12px rgba(255,34,64,0.7),0 0 24px rgba(210,210,210,0.25)",
-            zIndex:10,pointerEvents:"none",
-          }}/>
-        )}
-
-        {/* Barras das máquinas */}
-        {blocks.map((b, idx) => {
-          // Clip correto: left e right em bruto, depois clamp para [0,100]
+        {/* Barras — uma por row, altura fixa, nunca cortam */}
+        {visibleBlocks.map((b)=>{
           const leftRaw  = pctRaw(b.pi.getTime());
-          const rightRaw = pctRaw(b.pf.getTime() + 86400000);
-          const leftC    = Math.max(0, Math.min(100, leftRaw));
-          const rightC   = Math.max(0, Math.min(100, rightRaw));
-          const left  = leftC;
-          const width = Math.max(0.8, rightC - leftC);
-          // Se a barra fica fora do range visível, saltar
-          if (rightC <= 0 || leftC >= 100) return null;
-          const top   = idx * (BAR_H + GAP);
-          const fmtD  = d => d.toLocaleDateString("pt-PT",{day:"2-digit",month:"2-digit"});
-          return (
-            <div key={b.m.id}
-              title={`${b.m.serie} · ${b.m.modelo} · ${fmtD(b.pi)} → ${fmtD(b.pf)}`}
-              style={{
-                position:"absolute",
-                left:left+"%",
-                width:width+"%",
-                top:top+"px",
-                height:BAR_H+"px",
-                background:barBg(b),
-                border:barBorder(b),
-                boxShadow:barShadow(b),
-                borderRadius:"6px",
-                display:"flex",alignItems:"center",
-                padding:"0 10px",
-                overflow:"hidden",
-                zIndex:2,
-                gap:"8px",
-                backdropFilter:"blur(2px)",
-              }}>
-              {/* Indicador running */}
-              {b.run && (
-                <div style={{flexShrink:0,width:"6px",height:"6px",borderRadius:"50%",
-                  background:"#fff",animation:"blink 1s ease-in-out infinite"}}/>
-              )}
-              {/* NS — protagonista, sempre visível, nunca cortado por maxWidth */}
-              <span style={{
-                fontFamily:"'Orbitron',monospace",
-                fontSize:"11px",
-                fontWeight:900,
-                color:"#fff",
-                letterSpacing:"0.06em",
-                whiteSpace:"nowrap",
-                flexShrink:0,
-                textShadow:"0 1px 5px rgba(0,0,0,0.9)",
-              }}>
-                {b.m.serie || "—"}
-              </span>
-              {/* Modelo — só aparece se sobrar espaço */}
-              {width > 12 && (
-              <span style={{
-                fontFamily:"monospace",fontSize:"8px",
-                color:"rgba(255,255,255,0.55)",
-                whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",
-                flexShrink:1,minWidth:0,
-              }}>
-                {b.m.modelo}
-              </span>
-              )}
-              {/* Badges */}
-              {b.isPrio && (
-                <span style={{flexShrink:0,fontFamily:"monospace",fontSize:"8px",
+          const rightRaw = pctRaw(b.pf.getTime()+86400000);
+          const leftC    = Math.max(0,Math.min(100,leftRaw));
+          const rightC   = Math.max(0,Math.min(100,rightRaw));
+          const width    = Math.max(1.5, rightC-leftC);
+          if(rightC<=0||leftC>=100) return null;
+          const fmtD = d=>d.toLocaleDateString("pt-PT",{day:"2-digit",month:"2-digit"});
+          return(
+            <div key={b.m.id} style={{
+              position:"relative",height:"34px",flexShrink:0,zIndex:1,
+            }}>
+              {/* Barra — posicionada dentro da row */}
+              <div title={`${b.m.serie} · ${b.m.modelo} · ${fmtD(b.pi)} → ${fmtD(b.pf)}`}
+                style={{
+                  position:"absolute",
+                  left:leftC+"%",width:width+"%",
+                  top:0,height:"100%",
+                  background:barBg(b),
+                  border:barBorder(b),
+                  boxShadow:barShadow(b),
+                  borderRadius:"5px",
+                  display:"flex",alignItems:"center",
+                  padding:"0 8px",gap:6,
+                  overflow:"hidden",
+                  minWidth:"2px",
+                }}>
+                {b.run&&<span style={{flexShrink:0,width:6,height:6,borderRadius:"50%",
+                  background:"#22C55E",boxShadow:"0 0 8px #22C55E",
+                  animation:"blink 1s ease-in-out infinite"}}/>}
+                <span style={{fontFamily:"'Orbitron',monospace",fontSize:"11px",fontWeight:900,
+                  color:"#fff",letterSpacing:"0.06em",whiteSpace:"nowrap",flexShrink:0,
+                  textShadow:"0 1px 5px rgba(0,0,0,0.9)"}}>
+                  {b.m.serie||"—"}
+                </span>
+                {width>10&&<span style={{fontFamily:"monospace",fontSize:"8px",
+                  color:"rgba(255,255,255,0.55)",whiteSpace:"nowrap",overflow:"hidden",
+                  textOverflow:"ellipsis",flexShrink:1,minWidth:0}}>
+                  {b.m.modelo}
+                </span>}
+                {b.isPrio&&<span style={{flexShrink:0,fontSize:"8px",fontFamily:"monospace",
                   background:"rgba(245,158,11,0.35)",color:"#F59E0B",
-                  padding:"1px 5px",borderRadius:"3px",fontWeight:700,border:"1px solid rgba(245,158,11,0.5)"}}>⚑</span>
-              )}
-              {b.overrun && (
-                <span style={{flexShrink:0,fontFamily:"monospace",fontSize:"8px",
+                  padding:"1px 5px",borderRadius:"3px",fontWeight:700}}>⚑</span>}
+                {b.overrun&&<span style={{flexShrink:0,fontSize:"8px",fontFamily:"monospace",
                   background:"rgba(239,68,68,0.3)",color:"#FCA5A5",
-                  padding:"1px 5px",borderRadius:"3px",fontWeight:700}}>ATRAS.</span>
-              )}
+                  padding:"1px 5px",borderRadius:"3px",fontWeight:700}}>ATRAS.</span>}
+              </div>
             </div>
           );
         })}
+        {blocks.length>MAX_VISIBLE&&(
+          <div style={{textAlign:"center",fontFamily:"monospace",fontSize:"9px",
+            color:"rgba(180,180,180,0.4)",letterSpacing:"0.1em",padding:"4px 0"}}>
+            +{blocks.length-MAX_VISIBLE} MÁQUINAS NÃO VISÍVEIS
+          </div>
+        )}
       </div>
 
       {/* ── Legenda ── */}
@@ -1087,7 +1097,7 @@ export default function AoVivo(){
           <SlideHead title="RECONDICIONAMENTO" icon={<Wrench size={16}/>} color={D.purple} D={D} count={reconAnd.length+reconAF.length+reconCon.length}/>
           {reconAll.length+reconCon.length===0?<Empty label="Sem máquinas em recondicionamento" D={D}/>:
             <>
-              {reconAll.length>0&&<BigBoard items={reconAll} D={D}/>}
+              {reconAll.length>0&&<BigBoard items={reconAll} D={D} isRecon={true}/>}
               {reconCon.length>0&&(
                 <div style={{flexShrink:0}}>
                   <SecLabel label="✓ CONCLUÍDAS (30 DIAS)" D={D}/>
