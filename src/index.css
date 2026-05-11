@@ -48,19 +48,20 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    --cyber-pink:       #FF2D78;
-    --cyber-pink-dim:   #cc1f5e;
-    --cyber-blue:       #3D8EFF;
-    --cyber-blue-dim:   #1d6ee0;
-    --cyber-purple:     #8B4CF6;
+    /* STARK ARMOR — light mode (mantido como base) */
+    --cyber-pink:       #c8102e;
+    --cyber-pink-dim:   #8b0000;
+    --cyber-blue:       #888888;
+    --cyber-blue-dim:   #555555;
+    --cyber-purple:     #666666;
     --cyber-green:      #22C55E;
     --cyber-amber:      #F59E0B;
-    --cyber-red:        #EF4444;
+    --cyber-red:        #c8102e;
     --cyber-bg:         #E4E6EE;
     --cyber-surface:    #F2F3F8;
     --cyber-surface-2:  #E8EAF2;
     --cyber-border:     #BFC3D8;
-    --cyber-border-hi:  rgba(255,45,120,0.35);
+    --cyber-border-hi:  rgba(200,16,46,0.35);
     --cyber-text:       #0B0C18;
     --cyber-muted:      #626480;
     --glow-pink:        0 0 18px rgba(255,45,120,0.4);
@@ -105,20 +106,21 @@
     --sidebar-border: 240 14% 13%;
     --sidebar-ring: 330 100% 58%;
 
-    --cyber-pink:       #FF2D78;
-    --cyber-pink-dim:   #bb1a56;
-    --cyber-blue:       #4D9FFF;
-    --cyber-blue-dim:   #2a7fe0;
-    --cyber-purple:     #9B5CF6;
+    /* STARK ARMOR — dark mode palette */
+    --cyber-pink:       #e8e8e8;       /* prata — accent principal */
+    --cyber-pink-dim:   #aaaaaa;
+    --cyber-blue:       #c0c0c0;       /* prata secundária */
+    --cyber-blue-dim:   #888888;
+    --cyber-purple:     #c8102e;       /* vermelho Stark */
     --cyber-green:      #22C55E;
     --cyber-amber:      #F59E0B;
-    --cyber-red:        #EF4444;
-    --cyber-bg:         #06060D;
-    --cyber-surface:    #0D0D18;
-    --cyber-surface-2:  #111120;
-    --cyber-border:     #1A1A2F;
-    --cyber-border-hi:  rgba(255,45,120,0.45);
-    --cyber-text:       #E4E6FF;
+    --cyber-red:        #ff2240;
+    --cyber-bg:         #0a0408;       /* preto carbono vinho */
+    --cyber-surface:    #14070b;
+    --cyber-surface-2:  #1a0a0e;
+    --cyber-border:     rgba(200,200,200,0.15);
+    --cyber-border-hi:  rgba(200,200,200,0.4);
+    --cyber-text:       #f0f0f0;
     --cyber-muted:      #5A5A8A;
     --glow-pink:        0 0 32px rgba(255,45,120,0.65), 0 0 8px rgba(255,45,120,0.4);
     --glow-blue:        0 0 32px rgba(77,159,255,0.65), 0 0 8px rgba(77,159,255,0.4);
