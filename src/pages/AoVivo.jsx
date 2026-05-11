@@ -334,31 +334,62 @@ function BigBoard({items, D, isRecon=false}){
   const running = items.filter(m=>m.timer_status==="running");
   const paused  = items.filter(m=>m.timer_status!=="running");
   const nRun = running.length, nPause = paused.length;
-  const colsRun   = nRun<=1?1:nRun<=3?nRun:nRun<=6?3:4;
-  const colsPause = nPause<=1?1:nPause<=4?2:nPause<=8?4:5;
+  const total = items.length;
+
+  // Calcular colunas de forma a nunca cortar
+  const colsRun   = nRun===0?0:nRun<=2?nRun:nRun<=4?2:nRun<=6?3:4;
+  const colsPause = nPause===0?0:nPause<=2?nPause:nPause<=4?2:nPause<=6?3:nPause<=9?4:5;
+
+  // Estimar quantas linhas cada secção ocupa
+  const rowsRun   = nRun>0?Math.ceil(nRun/Math.max(colsRun,1)):0;
+  const rowsPause = nPause>0?Math.ceil(nPause/Math.max(colsPause,1)):0;
+
+  // Altura disponível aproximada para o content area (viewport - topbar ~88px - kpi ~80px - progress ~3px - footer ~44px - slide header ~52px - padding ~44px)
+  const availH = "calc(100vh - 311px)";
+
+  // Rácio running vs paused para distribuir altura
+  // running gets mais espaço por linha
+  const runWeight  = rowsRun  * 1.4;
+  const pauseWeight= rowsPause* 1.0;
+  const totalW     = runWeight + pauseWeight || 1;
+  const runPct     = runWeight / totalW * 100;
+  const pausePct   = pauseWeight / totalW * 100;
+
+  // Altura mínima por card para running e paused
+  const runMinH   = nRun===0?0:Math.max(100, Math.min(160, Math.floor(320/rowsRun)));
+  const pauseMinH = nPause===0?0:Math.max(80,  Math.min(120, Math.floor(240/rowsPause)));
+
   return(
-    <div style={{display:"flex",flexDirection:"column",gap:12,flex:1,overflow:"hidden"}}>
-      {/* ── RUNNING — cards grandes ── */}
+    <div style={{display:"flex",flexDirection:"column",gap:8,flex:1,overflow:"hidden",height:"100%"}}>
+      {/* ── RUNNING — cards destacados ── */}
       {running.length>0&&(
-        <div style={{display:"grid",
+        <div style={{
+          display:"grid",
           gridTemplateColumns:`repeat(${colsRun},1fr)`,
-          gap:10,flexShrink:0}}>
+          gridAutoRows:`minmax(${runMinH}px, 1fr)`,
+          gap:8,
+          flex: nPause>0 ? `${runPct} 0 0` : "1 0 0",
+          minHeight:0,
+          overflow:"hidden",
+        }}>
           {running.map(m=>(
-            <div key={m.id} style={{minHeight:"clamp(120px,11vw,155px)"}}>
-              <BoardCell m={m} D={D} isRecon={isRecon}/>
-            </div>
+            <BoardCell key={m.id} m={m} D={D} isRecon={isRecon}/>
           ))}
         </div>
       )}
-      {/* ── PAUSED — cards compactos ── */}
+      {/* ── PAUSED/IDLE — cards compactos ── */}
       {paused.length>0&&(
-        <div style={{display:"grid",
+        <div style={{
+          display:"grid",
           gridTemplateColumns:`repeat(${colsPause},1fr)`,
-          gap:8,flexShrink:0}}>
+          gridAutoRows:`minmax(${pauseMinH}px, 1fr)`,
+          gap:6,
+          flex: nRun>0 ? `${pausePct} 0 0` : "1 0 0",
+          minHeight:0,
+          overflow:"hidden",
+        }}>
           {paused.map(m=>(
-            <div key={m.id} style={{minHeight:"clamp(85px,7.5vw,110px)"}}>
-              <BoardCell m={m} D={D} isRecon={isRecon}/>
-            </div>
+            <BoardCell key={m.id} m={m} D={D} isRecon={isRecon}/>
           ))}
         </div>
       )}
@@ -1059,7 +1090,7 @@ export default function AoVivo(){
   // ── Slide renders ─────────────────────────────────────────────────────────
   const slides={
     andamento:(
-      <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden"}}>
+      <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden",flex:1}}>
         <SlideHead title="EM ANDAMENTO" icon={<Activity size={16}/>} color={D.blue} D={D} count={andamento.length}/>
         {andamento.length===0?<Empty label="Nenhuma máquina em produção" D={D}/>:<BigBoard items={andamento} D={D}/>}
       </div>
@@ -1093,7 +1124,7 @@ export default function AoVivo(){
       const timerPriority=s=>s==="running"?0:s==="paused"?1:2;
       const reconAll=[...reconAnd,...reconAF].sort((a,b)=>timerPriority(a.timer_status)-timerPriority(b.timer_status));
       return(
-        <div style={{display:"flex",flexDirection:"column",height:"100%",gap:"8px"}}>
+        <div style={{display:"flex",flexDirection:"column",height:"100%",gap:"8px",overflow:"hidden",flex:1}}>
           <SlideHead title="RECONDICIONAMENTO" icon={<Wrench size={16}/>} color={D.purple} D={D} count={reconAnd.length+reconAF.length+reconCon.length}/>
           {reconAll.length+reconCon.length===0?<Empty label="Sem máquinas em recondicionamento" D={D}/>:
             <>
@@ -1424,7 +1455,7 @@ export default function AoVivo(){
               </span>
             </div>
           </div>
-          :<div style={{position:"relative",zIndex:1,flex:1,display:"flex",flexDirection:"column"}}>{slides[SLIDES[slide].id]}</div>}
+          :<div style={{position:"relative",zIndex:1,flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minHeight:0}}>{slides[SLIDES[slide].id]}</div>}
       </div>
 
       {/* FOOTER */}
