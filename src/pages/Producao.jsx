@@ -130,7 +130,7 @@ async function callBridge(payload) {
 
 function StatusPill({ children, color = "blue", glow = true }) {
   const map = {
-    pink:   { bg: 'rgba(255,45,120,0.12)',  border: 'rgba(255,45,120,0.45)',  text: '#FF2D78' },
+    pink:   { bg: 'rgba(200,16,46,0.15)',   border: 'rgba(200,16,46,0.5)',    text: '#ff2240' },
     blue:   { bg: 'rgba(77,159,255,0.12)',  border: 'rgba(77,159,255,0.45)',  text: '#4D9FFF' },
     green:  { bg: 'rgba(34,197,94,0.12)',   border: 'rgba(34,197,94,0.5)',    text: '#22C55E' },
     amber:  { bg: 'rgba(245,158,11,0.12)',  border: 'rgba(245,158,11,0.55)',  text: '#F59E0B' },
@@ -160,12 +160,12 @@ function StatusPill({ children, color = "blue", glow = true }) {
 
 function MetricBlock({ icon: Icon, label, value, sub, color = "blue", flicker = false }) {
   const map = {
-    pink:  { c: '#FF2D78', glow: 'rgba(255,45,120,0.5)' },
-    blue:  { c: '#4D9FFF', glow: 'rgba(77,159,255,0.5)' },
+    pink:  { c: '#e8e8e8', glow: 'rgba(200,200,200,0.4)' },
+    blue:  { c: '#c0c0c0', glow: 'rgba(200,200,200,0.35)' },
     green: { c: '#22C55E', glow: 'rgba(34,197,94,0.5)' },
     amber: { c: '#F59E0B', glow: 'rgba(245,158,11,0.5)' },
     red:   { c: '#EF4444', glow: 'rgba(239,68,68,0.5)' },
-    purple:{ c: '#9B5CF6', glow: 'rgba(155,92,246,0.5)' },
+    purple:{ c: '#888888', glow: 'rgba(150,150,150,0.35)' },
   };
   const m = map[color] || map.blue;
   return (
@@ -239,7 +239,7 @@ function MachineActiveCard({ machine, isACP2, hasExpress }) {
             {running && !overrun && <StatusPill color="green">EM CURSO</StatusPill>}
             {!hasPrevisao && <StatusPill color="muted">SEM PREVISÃO</StatusPill>}
           </div>
-          <div className="watcher-title truncate" style={{ fontSize: '17px', fontWeight: 900, color: '#4D9FFF', letterSpacing: '0.06em', textShadow: '0 0 10px rgba(77,159,255,0.5)' }}>
+          <div className="watcher-title truncate" style={{ fontSize: '17px', fontWeight: 900, color: '#e8e8e8', letterSpacing: '0.06em', textShadow: '0 0 10px rgba(220,220,220,0.4)' }}>
             {machine.serie || "—"}
           </div>
           <div className="font-mono-cyber" style={{ fontSize: '11px', color: 'var(--cyber-text)', letterSpacing: '0.05em', marginTop: '2px', opacity: 0.7 }}>
@@ -248,7 +248,7 @@ function MachineActiveCard({ machine, isACP2, hasExpress }) {
         </div>
         <div className="font-mono-cyber text-right shrink-0" style={{ fontSize: '10px', color: 'var(--cyber-muted)', letterSpacing: '0.1em' }}>
           <div style={{ textTransform: 'uppercase' }}>ETAPA</div>
-          <div style={{ color: '#4D9FFF', fontWeight: 700, marginTop: '2px' }}>{getEtapaAtual(machine.estado || "")}</div>
+          <div style={{ color: '#c0c0c0', fontWeight: 700, marginTop: '2px' }}>{getEtapaAtual(machine.estado || "")}</div>
         </div>
       </div>
 
@@ -266,7 +266,7 @@ function MachineActiveCard({ machine, isACP2, hasExpress }) {
                 fontWeight: 900,
                 color: overrun ? '#EF4444' : (diasRestantes <= 1 ? '#F59E0B' : '#22C55E'),
                 textShadow: overrun
-                  ? '0 0 14px rgba(239,68,68,0.8)'
+                  ? '0 0 14px rgba(255,34,64,0.8)'
                   : (diasRestantes <= 1 ? '0 0 14px rgba(245,158,11,0.7)' : '0 0 14px rgba(34,197,94,0.7)'),
                 lineHeight: 1,
               }}
@@ -291,8 +291,8 @@ function MachineActiveCard({ machine, isACP2, hasExpress }) {
             style={{
               fontSize: '24px',
               fontWeight: 700,
-              color: overrun ? '#EF4444' : '#4D9FFF',
-              textShadow: overrun ? '0 0 14px rgba(239,68,68,0.8)' : '0 0 14px rgba(77,159,255,0.7)',
+              color: overrun ? '#ff2240' : '#e8e8e8',
+              textShadow: overrun ? '0 0 14px rgba(255,34,64,0.8)' : '0 0 12px rgba(220,220,220,0.5)',
             }}
           >
             {formatDateShort(fim)}
@@ -326,7 +326,7 @@ function MachineActiveCard({ machine, isACP2, hasExpress }) {
           <Timer className="w-3 h-3" />
           <span>TIMER</span>
         </div>
-        <div className="timer-display" style={{ fontSize: '14px', fontWeight: 700, color: running ? '#22C55E' : (paused ? '#F59E0B' : 'var(--cyber-muted)') }}>
+        <div className="timer-display" style={{ fontSize: '14px', fontWeight: 700, color: running ? '#22C55E' : (paused ? '#e8e8e8' : 'var(--cyber-muted)') }}>
           {formatHMS(elapsed)}
         </div>
       </div>
