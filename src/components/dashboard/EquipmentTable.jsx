@@ -63,7 +63,7 @@ export default function EquipmentTable({ equipment }) {
       <div className="p-5 border-b" style={{ borderColor: 'var(--cyber-border)' }}>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h3 className="watcher-title flex items-center gap-2" style={{ fontSize: '16px', color: 'var(--cyber-text)', letterSpacing: '0.16em' }}>
-            <Filter className="w-4 h-4" style={{ color: '#FF2D78', filter: 'drop-shadow(0 0 6px rgba(255,45,120,0.6))' }} />
+            <Filter className="w-4 h-4" style={{ color: '#C8102E', filter: 'drop-shadow(0 0 6px rgba(200,16,46,0.7))' }} />
             REGISTO DE EQUIPAMENTOS
           </h3>
           <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -99,7 +99,7 @@ export default function EquipmentTable({ equipment }) {
             <tr
               className="col-header-cyber border-b"
               style={{
-                background: 'rgba(255,45,120,0.04)',
+                background: 'rgba(200,16,46,0.06)',
                 color: 'var(--cyber-muted)',
                 borderColor: 'var(--cyber-border)',
               }}
@@ -128,7 +128,7 @@ export default function EquipmentTable({ equipment }) {
                     animate={{ opacity: 1 }}
                     className="transition group"
                     style={{ borderTop: '1px solid var(--cyber-border)' }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,45,120,0.04)'}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(200,16,46,0.05)'}
                     onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -147,7 +147,7 @@ export default function EquipmentTable({ equipment }) {
                         <StatusBadge status={eq.status} />
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap font-display font-bold tracking-wider group-hover:text-pink-500 transition" style={{ color: 'var(--cyber-text)' }}>
+                    <td className="px-6 py-4 whitespace-nowrap font-display font-bold tracking-wider transition" style={{ color: '#e8e8e8', fontFamily:"'Orbitron',monospace", fontSize:'12px', letterSpacing:'0.08em' }}>
                       {eq.equipment}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap font-mono-cyber text-xs" style={{ color: 'var(--cyber-muted)', letterSpacing: '0.08em' }}>
