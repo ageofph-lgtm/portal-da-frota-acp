@@ -38,7 +38,7 @@ export default function Dashboard() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <PageHeader title="DASHBOARD" subtitle={`Frota ${frota.toUpperCase()} · Estado em tempo real`} accent="pink" />
+        <PageHeader title="DASHBOARD" subtitle={`Frota ${frota.toUpperCase()} · Estado em tempo real`} accent="gold" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {Array(7).fill(0).map((_, i) => (
             <Skeleton key={i} className="h-28" />
@@ -55,7 +55,7 @@ export default function Dashboard() {
       <PageHeader
         title="DASHBOARD"
         subtitle={`Frota ${frota.toUpperCase()} · ${total} equipamentos · estado em tempo real`}
-        accent="pink"
+        accent="gold"
         right={
           <>
             <FrotaTabs active={frota} onChange={setFrota} />
