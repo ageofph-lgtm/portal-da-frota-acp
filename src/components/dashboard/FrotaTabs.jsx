@@ -25,10 +25,10 @@ export default function FrotaTabs({ active, onChange }) {
               letterSpacing: '0.16em',
               color: isActive ? '#fff' : 'var(--cyber-muted)',
               background: isActive
-                ? 'linear-gradient(135deg, #FF2D78, #9B5CF6)'
+                ? 'linear-gradient(135deg, #C8102E, #D4AF37)'
                 : 'transparent',
-              border: isActive ? '1px solid rgba(255,45,120,0.6)' : '1px solid transparent',
-              boxShadow: isActive ? '0 0 16px rgba(255,45,120,0.45)' : 'none',
+              border: isActive ? '1px solid rgba(212,175,55,0.5)' : '1px solid transparent',
+              boxShadow: isActive ? '0 0 16px rgba(200,16,46,0.5), 0 0 30px rgba(212,175,55,0.15)' : 'none',
               clipPath: 'polygon(6px 0, calc(100% - 6px) 0, 100% 6px, 100% calc(100% - 6px), calc(100% - 6px) 100%, 6px 100%, 0 calc(100% - 6px), 0 6px)',
             }}
           >
