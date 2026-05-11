@@ -31,6 +31,27 @@ const C = {
   yellow:"#F59E0B", purple:"#9B5CF6", bronze:"#CD7F32", silver:"#C0C0C0",
   cyan:"#22D3EE", red:"#EF4444",
 };
+// ── PALETA SEMÂNTICA POR CATEGORIA ──────────────────────────────────
+// Cada categoria tem: accent (borda/glow), bg (fundo do card), rgb (para rgba())
+const CAT = {
+  prio:     { accent:"#EF4444", rgb:"239,68,68",    bg:"rgba(239,68,68,0.10)",   label:"PRIORITÁRIA" },
+  recon:    { accent:"#9B5CF6", rgb:"155,92,246",   bg:"rgba(155,92,246,0.10)",  label:"RECOND." },
+  nts:      { accent:"#FF2D78", rgb:"255,45,120",   bg:"rgba(255,45,120,0.10)",  label:"NTS" },
+  concluida:{ accent:"#22C55E", rgb:"34,197,94",    bg:"rgba(34,197,94,0.10)",   label:"CONCLUÍDA" },
+  fila:     { accent:"#e8e8e8", rgb:"232,232,232",  bg:"rgba(232,232,232,0.06)", label:"FILA ACP" },
+  express:  { accent:"#4D9FFF", rgb:"77,159,255",   bg:"rgba(77,159,255,0.10)",  label:"EXPRESS" },
+  andamento:{ accent:"#e8e8e8", rgb:"232,232,232",  bg:"rgba(232,232,232,0.06)", label:"EM ANDAMENTO" },
+};
+// Resolver categoria de uma máquina
+function getMachineCategory(m){
+  const recon=m.recondicao||{};
+  if(recon.bronze||recon.prata) return "recon";
+  if(m.tipo==="nova") return "nts";
+  if(m.prioridade===true) return "prio";
+  if(m.express===true||m.urgente===true) return "express";
+  if(m.estado?.startsWith("concluida")||m.estado==="concluida") return "concluida";
+  return "andamento";
+}
 // STARK ARMOR PALETTE — aplicada apenas no modo dark (d=true)
 const DT = d => ({
   bg:      d?"#0a0408":"#eef0f7",           // preto carbono com hint de vinho
@@ -126,20 +147,31 @@ function Clock({D}){
 //  REACTOR GAUGE
 // ─────────────────────────────────────────────────────────────────────────────
 
-function BoardCell({m, D, isRecon=false}){
-  const elapsed = useLiveTimer(m);
-  const run    = m.timer_status==="running";
-  const prio   = m.prioridade===true;
-  const recon  = m.recondicao||{};
-  const rColor = recon.prata?D.silver:recon.bronze?D.bronze:null;
-  const rLabel = recon.prata?"PRATA":recon.bronze?"BRONZE":null;
-  const tasks  = m.tarefas||[];
-  const done   = tasks.filter(t=>t.concluida).length;
-  const pct    = tasks.length?Math.round(done/tasks.length*100):0;
-  // CORES: running=verde, paused=dourado/âmbar
-  const timerCol = run ? "#22C55E" : "#F59E0B";
-  const glowCol  = isRecon ? "138,43,226" : "155,92,246"; // roxo recon vs roxo std
-  const borderCol = run ? "rgba(34,197,94,0.6)" : prio ? "rgba(245,158,11,0.45)" : "rgba(155,92,246,0.2)";
+function BoardCell({m, D, forceCategory=null}){
+  const elapsed  = useLiveTimer(m);
+  const run      = m.timer_status==="running";
+  const paused   = m.timer_status==="paused";
+  const tasks    = m.tarefas||[];
+  const done     = tasks.filter(t=>t.concluida).length;
+  const pct      = tasks.length?Math.round(done/tasks.length*100):0;
+
+  // ── Categoria semântica ──────────────────────────────────────────
+  const catKey   = forceCategory || getMachineCategory(m);
+  const cat      = CAT[catKey] || CAT.andamento;
+  const accent   = cat.accent;
+  const rgb      = cat.rgb;
+
+  // ── Timers: verde running / dourado paused ──────────────────────
+  const timerCol = run?"#22C55E":"#F59E0B";
+  const timerGlow= run?`rgba(34,197,94,0.6)`:`rgba(245,158,11,0.45)`;
+
+  // ── Label recondicao se aplicável ─────────────────────────────
+  const recon    = m.recondicao||{};
+  const rLabel   = recon.prata?"◇ PRATA":recon.bronze?"◇ BRONZE":null;
+
+  // ── Borda superior: running=verde, paused=accent ───────────────
+  const topBorder  = run?"#22C55E":accent;
+  const borderCol  = run?`rgba(34,197,94,0.5)`:`rgba(${rgb},0.35)`;
 
   return(
     <div style={{
@@ -147,61 +179,63 @@ function BoardCell({m, D, isRecon=false}){
       display:"flex",flexDirection:"column",gap:6,
       padding:"12px 14px 10px",
       background:run
-        ? `linear-gradient(135deg,rgba(34,197,94,0.12) 0%,rgba(14,30,16,0.98) 100%)`
-        : `linear-gradient(135deg,rgba(245,158,11,0.08) 0%,rgba(20,14,6,0.98) 100%)`,
+        ? `linear-gradient(135deg,rgba(34,197,94,0.1) 0%,rgba(${rgb},0.06) 60%,rgba(10,4,8,0.98) 100%)`
+        : `linear-gradient(135deg,rgba(${rgb},0.12) 0%,rgba(8,4,6,0.98) 100%)`,
       border:`1px solid ${borderCol}`,
-      borderTop:`3px solid ${run?"#22C55E":prio?"#F59E0B":"rgba(155,92,246,0.5)"}`,
+      borderTop:`3px solid ${topBorder}`,
       boxShadow:run
-        ? `0 0 20px rgba(34,197,94,0.25),0 0 40px rgba(${glowCol},0.15),inset 0 0 20px rgba(34,197,94,0.06)`
-        : `0 0 16px rgba(${glowCol},0.2),0 0 32px rgba(${glowCol},0.08)`,
+        ? `0 0 18px rgba(34,197,94,0.2),0 0 35px rgba(${rgb},0.2),inset 0 0 16px rgba(${rgb},0.05)`
+        : `0 0 20px rgba(${rgb},0.25),0 0 40px rgba(${rgb},0.1)`,
       overflow:"hidden",
       clipPath:"polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))",
     }}>
-      {/* rivets prata nos cantos */}
+      {/* corner rivets */}
       {[{top:5,left:5},{top:5,right:5},{bottom:5,left:5},{bottom:5,right:5}].map((pos,i)=>(
         <span key={i} style={{position:"absolute",...pos,width:4,height:4,borderRadius:"50%",
-          background:"radial-gradient(circle,#e0e0e0 30%,#888 70%)",
-          boxShadow:"0 0 3px rgba(200,200,200,0.5)",zIndex:4,pointerEvents:"none"}}/>
+          background:`radial-gradient(circle,${accent} 30%,rgba(${rgb},0.3) 70%)`,
+          boxShadow:`0 0 4px rgba(${rgb},0.6)`,zIndex:4,pointerEvents:"none"}}/>
       ))}
-      {/* scan sweep — verde se running, roxo se paused */}
+      {/* scan sweep */}
       <div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:0,
         background:run
-          ?`linear-gradient(110deg,transparent 30%,rgba(34,197,94,0.07) 50%,transparent 70%)`
-          :`linear-gradient(135deg,rgba(${glowCol},0.05),transparent 60%)`,
-        backgroundSize:"200% 100%",animation:run?"hudScan 5s linear infinite":"hudPulse 3s ease-in-out infinite"}}/>
+          ?`linear-gradient(110deg,transparent 30%,rgba(34,197,94,0.06) 50%,transparent 70%)`
+          :`linear-gradient(135deg,rgba(${rgb},0.05),transparent 60%)`,
+        animation:run?"hudScan 5s linear infinite":"hudPulse 3s ease-in-out infinite"}}/>
 
-      {/* ── ROW 1: status dot + label + TIMER ── */}
+      {/* ── ROW 1: dot + status + badges + TIMER ── */}
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,zIndex:1}}>
         <div style={{display:"flex",alignItems:"center",gap:6}}>
+          {/* dot de status */}
           <span style={{width:7,height:7,borderRadius:"50%",flexShrink:0,
-            background:run?"#22C55E":"#F59E0B",
-            boxShadow:run?"0 0 8px #22C55E,0 0 16px rgba(34,197,94,0.5)":"0 0 6px rgba(245,158,11,0.5)",
+            background:run?"#22C55E":paused?"#F59E0B":accent,
+            boxShadow:run?`0 0 8px #22C55E,0 0 16px rgba(34,197,94,0.5)`:paused?`0 0 6px rgba(245,158,11,0.5)`:`0 0 6px rgba(${rgb},0.5)`,
             animation:run?"blink 1.2s ease-in-out infinite":"none"}}/>
           <span style={{fontFamily:"'Orbitron',monospace",fontSize:"clamp(8px,0.62vw,10px)",
             fontWeight:700,letterSpacing:"0.14em",
-            color:run?"#22C55E":"#F59E0B"}}>
-            {run?"ACTIVE":"PAUSED"}
+            color:run?"#22C55E":paused?"#F59E0B":accent}}>
+            {run?"ACTIVE":paused?"PAUSED":"IDLE"}
           </span>
-          {prio&&<HudTag color={D.yellow} label="⚑ PRIO" glow={true}/>}
-          {rLabel&&<HudTag color={rColor} label={`◇ ${rLabel}`}/>}
+          {/* badge categoria */}
+          <HudTag color={accent} label={cat.label} glow={true}/>
+          {rLabel&&<HudTag color={CAT.recon.accent} label={rLabel}/>}
+          {m.prioridade&&catKey!=="prio"&&<HudTag color={CAT.prio.accent} label="⚑ PRIO" glow/>}
         </div>
+        {/* TIMER */}
         <div style={{fontFamily:"'Orbitron',monospace",
           fontSize:run?"clamp(16px,1.45vw,21px)":"clamp(12px,1vw,15px)",fontWeight:900,
           color:timerCol,letterSpacing:"0.05em",
-          textShadow:run
-            ?"0 0 12px rgba(34,197,94,0.7),0 0 24px rgba(34,197,94,0.3)"
-            :"0 0 10px rgba(245,158,11,0.5)",
+          textShadow:`0 0 12px ${timerGlow},0 0 24px ${timerGlow}`,
           transition:"all 0.3s"}}>
           {fmtHMS(elapsed)}
         </div>
       </div>
 
-      {/* ── ROW 2: NS grande ── */}
+      {/* ── ROW 2: NS grande + modelo ── */}
       <div style={{zIndex:1}}>
         <div style={{fontFamily:"'Orbitron',monospace",
           fontSize:run?"clamp(15px,1.4vw,20px)":"clamp(13px,1.15vw,17px)",fontWeight:900,
-          color:"#e8e8e8",letterSpacing:"0.07em",lineHeight:1.1,
-          textShadow:run?"0 0 12px rgba(220,220,220,0.5),0 0 20px rgba(34,197,94,0.2)":"0 0 6px rgba(180,180,180,0.2)",
+          color:"#f0f0f0",letterSpacing:"0.07em",lineHeight:1.1,
+          textShadow:run?`0 0 12px rgba(255,255,255,0.4),0 0 20px rgba(${rgb},0.3)`:`0 0 8px rgba(${rgb},0.4)`,
           whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",
           transition:"font-size 0.3s"}}>
           {m.serie||"—"}
@@ -213,14 +247,14 @@ function BoardCell({m, D, isRecon=false}){
         </div>
       </div>
 
-      {/* ── ROW 3: primeira tarefa ── */}
+      {/* ── ROW 3: primeira tarefa pendente ── */}
       {tasks.length>0&&(
         <div style={{display:"flex",alignItems:"center",gap:6,zIndex:1,
           padding:"5px 8px",
-          background:"rgba(200,16,46,0.12)",
-          borderLeft:"2px solid rgba(200,16,46,0.6)"}}>
+          background:`rgba(${rgb},0.1)`,
+          borderLeft:`2px solid rgba(${rgb},0.6)`}}>
           <span style={{fontFamily:"'JetBrains Mono',monospace",
-            fontSize:"clamp(7px,0.55vw,9px)",color:"rgba(200,16,46,0.9)",
+            fontSize:"clamp(7px,0.55vw,9px)",color:accent,
             letterSpacing:"0.2em",flexShrink:0,fontWeight:700}}>TASK</span>
           <span style={{fontFamily:"'JetBrains Mono',monospace",
             fontSize:"clamp(9px,0.72vw,11px)",color:"rgba(210,210,210,0.85)",
@@ -230,15 +264,15 @@ function BoardCell({m, D, isRecon=false}){
         </div>
       )}
 
-      {/* ── ROW 4: chips ── */}
+      {/* ── ROW 4: chips de tarefas ── */}
       {tasks.length>0&&(
         <div style={{display:"flex",flexWrap:"wrap",gap:4,zIndex:1,marginTop:"auto"}}>
           {tasks.map((t,i)=>(
             <span key={i} style={{fontFamily:"'JetBrains Mono',monospace",
               fontSize:"clamp(8px,0.6vw,9px)",padding:"2px 8px",
-              background:t.concluida?"rgba(34,197,94,0.12)":"rgba(200,200,200,0.07)",
-              color:t.concluida?D.green:"rgba(185,185,185,0.85)",
-              border:`1px solid ${t.concluida?"rgba(34,197,94,0.4)":"rgba(200,200,200,0.2)"}`,
+              background:t.concluida?"rgba(34,197,94,0.12)":`rgba(${rgb},0.07)`,
+              color:t.concluida?"#22C55E":accent,
+              border:`1px solid ${t.concluida?"rgba(34,197,94,0.4)":`rgba(${rgb},0.3)`}`,
               textDecoration:t.concluida?"line-through":"none",
               clipPath:"polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%)",
               fontWeight:600,letterSpacing:"0.05em"}}>
@@ -248,21 +282,27 @@ function BoardCell({m, D, isRecon=false}){
         </div>
       )}
 
-      {/* ── Progress bar vermelho→prata ── */}
+      {/* ── Progress bar: vermelho→accent ── */}
       {tasks.length>0&&(
         <div style={{height:2,background:"rgba(255,255,255,0.04)",overflow:"hidden",zIndex:1}}>
           <div style={{height:"100%",width:`${pct}%`,
-            background:`linear-gradient(90deg,#c8102e,#c0c0c0,#e8e8e8)`,
-            boxShadow:"0 0 6px rgba(200,200,200,0.35)",transition:"width 0.5s"}}/>
+            background:`linear-gradient(90deg,#c8102e,${accent})`,
+            boxShadow:`0 0 6px rgba(${rgb},0.5)`,transition:"width 0.5s"}}/>
         </div>
       )}
     </div>
   );
 }
 
+
 // ─────────────────────────────────────────────────────────────────────────────
-//  BIG BOARD — grid auto sem scroll. Calcula minmax com base no nº de itens
+//  BIG BOARD CELL — card compacto adaptável (usado em Em Andamento)
+//  Tamanho adapta-se automaticamente ao nº de itens via CSS grid auto-fit
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+//  REACTOR GAUGE
+// ─────────────────────────────────────────────────────────────────────────────
+
 function BigBoard({items, D, isRecon=false}){
   const running = items.filter(m=>m.timer_status==="running");
   const paused  = items.filter(m=>m.timer_status!=="running");
@@ -476,155 +516,98 @@ function CalendarFila({items, D}){
 // ─────────────────────────────────────────────────────────────────────────────
 //  ROW ITEM — linha compacta (Prioritárias, NTS, Recon, Concluídas)
 // ─────────────────────────────────────────────────────────────────────────────
-function RowItem({m, idx, D, accent, showTimer=true, showDate=false}){
+function RowItem({m, idx, D, forceCategory=null, showTimer=true, showDate=false}){
   const elapsed = useLiveTimer(m);
   const run     = m.timer_status==="running";
   const tasks   = m.tarefas||[];
   const done    = tasks.filter(t=>t.concluida).length;
   const pct     = tasks.length?Math.round(done/tasks.length*100):0;
-  const prio    = m.prioridade===true;
   const recon   = m.recondicao||{};
-  const rColor  = recon.prata?D.silver:recon.bronze?D.bronze:null;
   const rLabel  = recon.prata?"PRATA":recon.bronze?"BRONZE":null;
   const isCon   = m.estado?.startsWith("concluida")||m.estado==="concluida";
-  const isAct   = m.estado?.startsWith("em-preparacao");
-  const barCol  = isCon?D.green:isAct?(run?D.green:D.yellow):D.sub;
+
+  const catKey  = forceCategory || getMachineCategory(m);
+  const cat     = CAT[catKey] || CAT.andamento;
+  const accent  = cat.accent;
+  const rgb     = cat.rgb;
+  const timerCol= run?"#22C55E":"#F59E0B";
 
   return(
     <div style={{
-      position:"relative",
-      display:"grid",
-      gridTemplateColumns:"38% 1fr auto",
-      alignItems:"center",gap:0,
-      background:`linear-gradient(135deg, rgba(200,16,46,0.10), transparent 35%), linear-gradient(90deg, ${idx%2===0?D.card:D.cardB} 0%, ${D.card} 100%)`,
-      border:`1px solid ${prio?"rgba(210,210,210,0.4)":run?"rgba(210,210,210,0.18)":"rgba(210,210,210,0.1)"}`,
-      borderLeft:`4px solid ${prio?D.yellow:barCol}`,
-      boxShadow: prio ? `0 0 16px rgba(245,158,11,0.25), inset 0 0 14px rgba(245,158,11,0.05)` : run && !isCon ? `0 0 0 1px ${D.green}22, 0 0 12px ${D.green}1a` : "none",
-      overflow:"hidden",
-      minHeight:"60px",
-
-      clipPath:"polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))",
+      position:"relative",overflow:"hidden",
+      display:"flex",alignItems:"center",gap:12,
+      padding:"8px 12px",
+      background:isCon
+        ?`rgba(34,197,94,0.07)`
+        :run
+        ?`linear-gradient(90deg,rgba(34,197,94,0.08),rgba(${rgb},0.06))`
+        :`rgba(${rgb},0.06)`,
+      border:`1px solid rgba(${rgb},0.25)`,
+      borderLeft:`3px solid ${run?"#22C55E":accent}`,
+      boxShadow:`0 0 12px rgba(${rgb},0.15)`,
+      borderRadius:"4px",
+      clipPath:"polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px))",
     }}>
-      {/* scan sweep nas linhas em curso */}
-      {run && !isCon && (
-        <div style={{position:"absolute",inset:0,pointerEvents:"none",
-          background:`linear-gradient(110deg, transparent 45%, ${D.green}10 50%, transparent 55%)`,
-          backgroundSize:"200% 100%",
-          animation:"hudScan 5s linear infinite",zIndex:0}}/>
-      )}
+      {/* index */}
+      <span style={{fontFamily:"'Orbitron',monospace",fontSize:"9px",fontWeight:700,
+        color:`rgba(${rgb},0.5)`,flexShrink:0,width:"16px",textAlign:"right"}}>
+        {String(idx+1).padStart(2,"0")}
+      </span>
 
-      {/* Col A — NS + Modelo + badges */}
-      <div style={{position:"relative",zIndex:1,padding:"10px 16px",
-        borderRight:`1px solid ${D.line}`,minWidth:0}}>
+      {/* NS + modelo */}
+      <div style={{flex:1,minWidth:0}}>
         <div style={{fontFamily:"'Orbitron',monospace",
-          fontSize:"clamp(15px,1.3vw,20px)",fontWeight:900,
-          color:"#e8e8e8",letterSpacing:"0.08em",
-          textShadow:`0 0 12px rgba(210,210,210,0.7), 0 0 24px rgba(210,210,210,0.25)`,
+          fontSize:"clamp(12px,1.05vw,14px)",fontWeight:900,
+          color:"#f0f0f0",letterSpacing:"0.06em",
+          textShadow:`0 0 8px rgba(${rgb},0.4)`,
           whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
           {m.serie||"—"}
         </div>
-        <div style={{fontFamily:"'JetBrains Mono',monospace",
-          fontSize:"clamp(9px,0.75vw,11px)",color:"#a8a8a8",marginTop:"3px",
+        <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"9px",
+          color:"rgba(150,150,150,0.7)",marginTop:"1px",
           whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-          {m.modelo}
+          {m.modelo||"—"}
         </div>
-        {(prio||rLabel)&&(
-          <div style={{display:"flex",gap:"4px",marginTop:"5px",flexWrap:"wrap"}}>
-            {prio&&<HudTag color={D.yellow} label="⚑ PRIO" glow={true}/>}
-            {rLabel&&<HudTag color={rColor} label={`◇ ${rLabel}`}/>}
-          </div>
-        )}
       </div>
 
-      {/* Col B — Tarefas + barra */}
-      <div style={{position:"relative",zIndex:1,padding:"10px 14px",minWidth:0}}>
-        {tasks.length===0
-          ?<span style={{fontFamily:"'Orbitron',monospace",
-            fontSize:"clamp(9px,0.7vw,11px)",fontWeight:600,
-            letterSpacing:"0.15em",color:D.muted}}>— SEM TAREFAS —</span>
-          :<>
-            <div style={{display:"flex",flexWrap:"wrap",gap:"4px",marginBottom:"6px"}}>
-              {tasks.map((t,i)=>(
-                <span key={i} style={{fontFamily:"monospace",
-                  fontSize:"clamp(9px,0.72vw,11px)",padding:"2px 8px",
-                  background:t.concluida?`${D.green}1a`:`${accent}14`,
-                  color:t.concluida?D.green:accent,
-                  border:`1px solid ${t.concluida?D.green:accent}3a`,
-                  textDecoration:t.concluida?"line-through":"none",
-                  fontWeight:600,letterSpacing:"0.02em",
-                  clipPath:"polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px)"}}>
-                  {t.texto}
-                </span>
-              ))}
-            </div>
-            <div style={{display:"flex",alignItems:"center",gap:"8px"}}>
-              <div style={{flex:1,height:"3px",background:D.sub,overflow:"hidden"}}>
-                <div style={{height:"100%",width:`${pct}%`,
-                  background:`linear-gradient(90deg,${D.pink},${D.blue},${D.cyan})`,
-                  boxShadow:`0 0 6px ${D.blue}77`,
-                  transition:"width 0.5s"}}/>
-              </div>
-              <span style={{fontFamily:"'Orbitron',monospace",
-                fontSize:"clamp(9px,0.7vw,11px)",fontWeight:700,
-                color:D.muted,flexShrink:0,letterSpacing:"0.05em"}}>
-                {done}/{tasks.length}
-              </span>
-            </div>
-          </>}
+      {/* Badges */}
+      <div style={{display:"flex",gap:4,flexShrink:0,alignItems:"center"}}>
+        <HudTag color={accent} label={cat.label}/>
+        {rLabel&&<HudTag color={CAT.recon.accent} label={rLabel}/>}
+        {m.prioridade&&catKey!=="prio"&&<HudTag color={CAT.prio.accent} label="⚑"/>}
       </div>
 
-      {/* Col C — Timer ou Data */}
-      <div style={{position:"relative",zIndex:1,padding:"10px 16px",
-        borderLeft:`1px solid ${D.line}`,
-        display:"flex",flexDirection:"column",alignItems:"flex-end",gap:"4px",
-        minWidth:"clamp(120px,11vw,170px)"}}>
-        {showTimer&&(
-          <>
-            <div style={{fontFamily:"'Orbitron',monospace",
-              fontSize:"clamp(18px,1.65vw,26px)",fontWeight:900,
-              color:barCol,letterSpacing:"0.04em",textShadow:`0 0 12px ${barCol}55`}}>
-              {fmtHMS(elapsed)}
-            </div>
-            <div style={{display:"flex",alignItems:"center",gap:"5px"}}>
-              <div style={{width:"6px",height:"6px",background:barCol,
-                boxShadow:`0 0 6px ${barCol}`,
-                clipPath:"polygon(50% 0, 100% 50%, 50% 100%, 0 50%)",
-                animation:(run&&!isCon)?"blink 1.2s ease-in-out infinite":"none"}}/>
-              <span style={{fontFamily:"'Orbitron',monospace",
-                fontSize:"clamp(8px,0.65vw,10px)",fontWeight:700,
-                color:barCol,letterSpacing:"0.14em"}}>
-                {isCon?"CONCLUÍDA":run?"EM CURSO":"PAUSADO"}
-              </span>
-            </div>
-          </>
-        )}
-        {showDate&&(
-          <>
-            <div style={{fontFamily:"'Orbitron',monospace",
-              fontSize:"clamp(14px,1.15vw,18px)",fontWeight:800,color:D.green,
-              textShadow:`0 0 10px ${D.green}55`,letterSpacing:"0.04em",
-              textTransform:"uppercase"}}>
-              {fmtDate(m.dataConclusao||m.updated_date)}
-            </div>
-            {m.timer_accumulated_seconds>0&&(
-              <div style={{fontFamily:"'Orbitron',monospace",
-                fontSize:"clamp(10px,0.8vw,12px)",color:D.muted,letterSpacing:"0.04em"}}>
-                {fmtHMS(m.timer_accumulated_seconds)}
-              </div>
-            )}
-          </>
-        )}
-        {!showTimer&&!showDate&&(
-          <HudTag color={D.muted} label="FILA" dim/>
-        )}
-      </div>
+      {/* Data */}
+      {showDate&&m.previsao_inicio&&(
+        <div style={{fontFamily:"'Orbitron',monospace",fontSize:"9px",fontWeight:700,
+          color:accent,letterSpacing:"0.06em",flexShrink:0,
+          textShadow:`0 0 8px rgba(${rgb},0.5)`}}>
+          {new Date(m.previsao_inicio).toLocaleDateString("pt-PT",{day:"2-digit",month:"2-digit"})}
+        </div>
+      )}
+
+      {/* Timer */}
+      {showTimer&&(
+        <div style={{fontFamily:"'Orbitron',monospace",fontSize:"clamp(12px,1vw,14px)",
+          fontWeight:900,color:timerCol,letterSpacing:"0.04em",flexShrink:0,
+          textShadow:run?`0 0 10px rgba(34,197,94,0.6)`:`0 0 8px rgba(245,158,11,0.4)`}}>
+          {fmtHMS(elapsed)}
+        </div>
+      )}
+
+      {/* Progress bar */}
+      {tasks.length>0&&(
+        <div style={{position:"absolute",bottom:0,left:0,right:0,height:"2px",
+          background:"rgba(255,255,255,0.03)"}}>
+          <div style={{height:"100%",width:`${pct}%`,
+            background:`linear-gradient(90deg,#c8102e,${accent})`,
+            boxShadow:`0 0 4px rgba(${rgb},0.4)`,transition:"width 0.5s"}}/>
+        </div>
+      )}
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  SECTION LABEL
-// ─────────────────────────────────────────────────────────────────────────────
 function SecLabel({label,D}){
   return(
     <div style={{display:"flex",alignItems:"center",gap:"8px",
@@ -1069,7 +1052,7 @@ export default function AoVivo(){
         <SlideHead title="PRIORITÁRIAS" icon={<Flag size={16}/>} color={D.yellow} pulse D={D} count={prioritarias.length}/>
         {prioritarias.length===0?<Empty label="Sem prioritárias activas ✓" D={D}/>:
           <div style={{display:"flex",flexDirection:"column",gap:"4px"}}>
-            {prioritarias.map((m,i)=><RowItem key={m.id} m={m} idx={i} D={D} accent={D.yellow}/>)}
+            {prioritarias.map((m,i)=><RowItem key={m.id} m={m} idx={i} D={D} forceCategory="prio"/>)}
           </div>}
       </div>
     ),
@@ -1084,8 +1067,8 @@ export default function AoVivo(){
         <SlideHead title="NTS" icon={<ListOrdered size={16}/>} color={D.pink} D={D} count={ntsAnd.length+ntsAF.length}/>
         {ntsAnd.length+ntsAF.length===0?<Empty label="Sem máquinas NTS" D={D}/>:
           <div style={{display:"flex",flexDirection:"column",gap:"4px"}}>
-            {ntsAnd.length>0&&<><SecLabel label="▶ EM ANDAMENTO" D={D}/>{ntsAnd.map((m,i)=><RowItem key={m.id} m={m} idx={i} D={D} accent={D.pink}/>)}</>}
-            {ntsAF.length>0&&<><SecLabel label="⏳ A FAZER" D={D}/>{ntsAF.map((m,i)=><RowItem key={m.id} m={m} idx={i} D={D} accent={D.pink} showTimer={false}/>)}</>}
+            {ntsAnd.length>0&&<><SecLabel label="▶ EM ANDAMENTO" D={D}/>{ntsAnd.map((m,i)=><RowItem key={m.id} m={m} idx={i} D={D} forceCategory="nts"/>)}</>}
+            {ntsAF.length>0&&<><SecLabel label="⏳ A FAZER" D={D}/>{ntsAF.map((m,i)=><RowItem key={m.id} m={m} idx={i} D={D} forceCategory="nts" showTimer={false}/>)}</>}
           </div>}
       </div>
     ),
@@ -1102,7 +1085,7 @@ export default function AoVivo(){
                 <div style={{flexShrink:0}}>
                   <SecLabel label="✓ CONCLUÍDAS (30 DIAS)" D={D}/>
                   <div style={{display:"flex",flexDirection:"column",gap:"4px",marginTop:"4px"}}>
-                    {reconCon.map((m,i)=><RowItem key={m.id} m={m} idx={i} D={D} accent={D.green} showTimer={false} showDate/>)}
+                    {reconCon.map((m,i)=><RowItem key={m.id} m={m} idx={i} D={D} forceCategory="concluida" showTimer={false} showDate/>)}
                   </div>
                 </div>
               )}
@@ -1126,7 +1109,7 @@ export default function AoVivo(){
         {conSemana.length===0?<Empty label="Nenhuma conclusão esta semana ainda" D={D}/>:
           <div style={{display:"flex",flexDirection:"column",gap:"4px"}}>
             {[...conSemana].sort((a,b)=>new Date(b.dataConclusao||b.updated_date)-new Date(a.dataConclusao||a.updated_date))
-              .map((m,i)=><RowItem key={m.id} m={m} idx={i} D={D} accent={D.green} showTimer={false} showDate/>)}
+              .map((m,i)=><RowItem key={m.id} m={m} idx={i} D={D} forceCategory="concluida" showTimer={false} showDate/>)}
           </div>}
       </div>
     ),
