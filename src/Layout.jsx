@@ -5,11 +5,13 @@ import { LayoutDashboard, Settings, Moon, Sun, Globe, Kanban, Zap } from "lucide
 import WatcherLogo from "@/components/shared/WatcherLogo";
 
 const T = {
-  pink:   '#FF2D78',
-  blue:   '#4D9FFF',
+  // STARK ARMOR palette
+  pink:   '#C8102E',        // vermelho Stark  (accent principal)
+  blue:   '#c0c0c0',        // prata (accent secundário)
+  gold:   '#D4AF37',        // dourado metálico
   purple: '#9B5CF6',
   green:  '#22C55E',
-  dark:  { bg: '#06060D', nav: 'rgba(6,6,13,0.98)', border: '#1A1A2F', text: '#E4E6FF', muted: '#5A5A8A' },
+  dark:  { bg: '#0a0408', nav: 'rgba(10,4,8,0.98)', border: 'rgba(210,210,210,0.12)', text: '#f0f0f0', muted: 'rgba(170,170,170,0.55)' },
   light: { bg: '#E4E6EE', nav: 'rgba(232,234,245,0.97)', border: '#BFC3D8', text: '#0B0C18', muted: '#626480' },
 };
 
@@ -67,7 +69,7 @@ export default function Layout({ children, currentPageName }) {
       {/* ── NAVBAR (oculta em fullscreen) ── */}
       {!isFullscreen && <nav style={{
         background: dark
-          ? 'linear-gradient(180deg, rgba(6,6,13,0.98) 0%, rgba(9,9,20,0.96) 100%)'
+          ? 'linear-gradient(180deg, rgba(10,4,8,0.99) 0%, rgba(14,5,9,0.97) 100%)'
           : 'linear-gradient(180deg, rgba(232,234,245,0.98) 0%, rgba(220,222,235,0.96) 100%)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
@@ -79,7 +81,7 @@ export default function Layout({ children, currentPageName }) {
         {/* Linha neon superior */}
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0, height: '1px',
-          background: `linear-gradient(90deg, transparent 0%, ${T.pink} 25%, ${T.blue} 75%, transparent 100%)`,
+          background: `linear-gradient(90deg, transparent 0%, ${T.gold} 30%, ${T.pink} 55%, ${T.gold} 80%, transparent 100%)`,
           opacity: dark ? 0.9 : 0.5,
         }} />
 
@@ -94,8 +96,8 @@ export default function Layout({ children, currentPageName }) {
                   style={{
                     fontSize: '15px',
                     fontWeight: 900,
-                    color: T.pink,
-                    textShadow: dark ? '0 0 14px rgba(255,45,120,0.7)' : 'none',
+                    color: dark ? T.gold : T.pink,
+                    textShadow: dark ? `0 0 14px rgba(212,175,55,0.8)` : 'none',
                   }}
                 >
                   FROTA ACP
@@ -129,10 +131,10 @@ export default function Layout({ children, currentPageName }) {
                       letterSpacing: '0.14em',
                       color: active ? '#fff' : theme.muted,
                       background: active
-                        ? `linear-gradient(135deg, ${T.pink}, ${T.purple})`
+                        ? `linear-gradient(135deg, ${T.pink}, ${T.gold})`
                         : 'transparent',
                       border: `1px solid ${active ? 'rgba(255,45,120,0.6)' : 'transparent'}`,
-                      boxShadow: active && dark ? '0 0 18px rgba(255,45,120,0.45)' : 'none',
+                      boxShadow: active && dark ? `0 0 18px rgba(200,16,46,0.5),0 0 32px rgba(212,175,55,0.2)` : 'none',
                     }}
                   >
                     <Icon className="w-4 h-4" />
@@ -170,7 +172,7 @@ export default function Layout({ children, currentPageName }) {
       <footer style={{
         borderTop: `1px solid ${theme.border}`,
         background: dark
-          ? 'linear-gradient(180deg, rgba(6,6,13,0.98) 0%, rgba(9,9,16,1) 100%)'
+          ? 'linear-gradient(180deg, rgba(10,4,8,0.98) 0%, rgba(6,2,4,1) 100%)'
           : theme.nav,
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
@@ -179,7 +181,7 @@ export default function Layout({ children, currentPageName }) {
       }}>
         <div style={{
           position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
-          background: `linear-gradient(90deg, transparent 0%, ${T.pink} 25%, ${T.blue} 75%, transparent 100%)`,
+          background: `linear-gradient(90deg, transparent 0%, ${T.gold} 30%, ${T.pink} 55%, ${T.gold} 80%, transparent 100%)`,
           opacity: dark ? 0.9 : 0.5,
         }} />
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-2 flex-wrap">
