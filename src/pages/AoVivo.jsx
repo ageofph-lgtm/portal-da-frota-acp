@@ -54,25 +54,41 @@ function getMachineCategory(m){
 }
 // STARK ARMOR PALETTE — aplicada apenas no modo dark (d=true)
 const DT = d => ({
-  bg:      d?"#0a0408":"#eef0f7",           // preto carbono com hint de vinho
-  surface: d?"#14070b":"#ffffff",           // placa interior
-  card:    d?"#1a0a0e":"#f4f5fc",           // card escuro
-  cardB:   d?"#200c12":"#ecedf8",           // card borda
-  line:    d?"rgba(210,210,210,0.15)":"rgba(0,0,0,0.07)",   // gold rim subtil
-  sub:     d?"rgba(210,210,210,0.08)":"rgba(0,0,0,0.10)",   // gold faint
-  text:    d?"#fff5e6":"#0b0c18",           // hud warm white
-  muted:   d?"rgba(180,180,180,0.65)":"rgba(11,12,24,0.5)",// gold dim
-  hudLine: d?"rgba(200,16,46,0.4)":"rgba(77,159,255,0.45)",// red line
-  hudGlow: d?"rgba(200,16,46,0.12)":"rgba(77,159,255,0.10)",// red glow
-  scanBg:  d?"rgba(200,16,46,0.03)":"rgba(255,45,120,0.03)",
-  // cores semânticas mantidas — apenas o tema base muda
+  bg:      d?"#0a0408":"#f0f2f8",           // dark: carbono | light: azul frio claro
+  surface: d?"#14070b":"#ffffff",
+  card:    d?"#1a0a0e":"#ffffff",
+  cardB:   d?"#200c12":"#e2e4f0",
+  line:    d?"rgba(210,210,210,0.15)":"rgba(0,0,0,0.10)",
+  sub:     d?"rgba(210,210,210,0.08)":"rgba(0,0,0,0.05)",
+  text:    d?"#fff5e6":"#0d0e1a",           // dark: warm white | light: quase preto
+  muted:   d?"rgba(180,180,180,0.65)":"rgba(30,30,60,0.55)",
+  hudLine: d?"rgba(200,16,46,0.4)":"rgba(200,16,46,0.35)",
+  hudGlow: d?"rgba(200,16,46,0.12)":"rgba(200,16,46,0.08)",
+  scanBg:  d?"rgba(200,16,46,0.03)":"rgba(200,16,46,0.02)",
+  // card backgrounds para light mode
+  cardBg:  d?"rgba(255,255,255,0.01)":"rgba(255,255,255,0.85)",
+  rowBg:   d?"rgba(255,255,255,0.015)":"rgba(255,255,255,0.7)",
+  rowHov:  d?"rgba(255,255,255,0.035)":"rgba(200,16,46,0.04)",
+  inputBg: d?"rgba(255,255,255,0.04)":"rgba(255,255,255,0.9)",
+  // cores semânticas — mesmas em ambos os modos
   ...C,
-  // accent overrides dark mode
+  // accent overrides
   ...(d ? {
-    pink:   "#ff2240",  // red bright como accent principal
-    blue:   "#c8c8c8",  // gold como accent secundário
-    cyan:   "#5cffff",  // arc reactor
-  } : {}),
+    pink: "#ff2240",
+    blue: "#c8c8c8",
+    cyan: "#5cffff",
+  } : {
+    // light: cores ligeiramente mais saturadas e escuras para contraste
+    green:  "#16a34a",
+    red:    "#dc2626",
+    yellow: "#d97706",
+    purple: "#7c3aed",
+    pink:   "#c8102e",
+    blue:   "#2563eb",
+    cyan:   "#0891b2",
+  }),
+  // flag para uso nos componentes
+  dark: d,
 });
 
 // ── HUD primitives ────────────────────────────────────────────────────────────
@@ -128,7 +144,7 @@ function Clock({D}){
       borderLeft:`1px solid ${D.line}`,borderRight:`1px solid ${D.line}`}}>
       <div style={{fontFamily:"'Orbitron',monospace",fontSize:"clamp(18px,1.5vw,24px)",fontWeight:900,
         color:D.text,letterSpacing:"0.08em",
-        textShadow:`0 0 12px ${D.cyan}66`}}>
+        textShadow:D.dark?`0 0 12px ${D.cyan}66`:"none"}}>
         {n.toLocaleTimeString("pt-PT")}
       </div>
       <div style={{fontFamily:"'Orbitron',monospace",fontSize:"clamp(9px,0.7vw,11px)",color:D.muted,
@@ -148,6 +164,7 @@ function Clock({D}){
 // ─────────────────────────────────────────────────────────────────────────────
 
 function BoardCell({m, D, forceCategory=null}){
+  const dark     = D.dark;
   const elapsed  = useLiveTimer(m);
   const run      = m.timer_status==="running";
   const paused   = m.timer_status==="paused";
@@ -155,37 +172,44 @@ function BoardCell({m, D, forceCategory=null}){
   const done     = tasks.filter(t=>t.concluida).length;
   const pct      = tasks.length?Math.round(done/tasks.length*100):0;
 
-  // ── Categoria semântica ──────────────────────────────────────────
   const catKey   = forceCategory || getMachineCategory(m);
   const cat      = CAT[catKey] || CAT.andamento;
-  const accent   = cat.accent;
+  const accent   = dark ? cat.accent : cat.accent;
   const rgb      = cat.rgb;
 
-  // ── Timers: verde running / dourado paused ──────────────────────
-  const timerCol = run?"#22C55E":"#F59E0B";
-  const timerGlow= run?`rgba(34,197,94,0.6)`:`rgba(245,158,11,0.45)`;
+  const timerCol  = run?"#22C55E":"#F59E0B";
+  const timerGlow = run?"rgba(34,197,94,0.6)":"rgba(245,158,11,0.45)";
 
-  // ── Label recondicao se aplicável ─────────────────────────────
-  const recon    = m.recondicao||{};
-  const rLabel   = recon.prata?"◇ PRATA":recon.bronze?"◇ BRONZE":null;
+  const recon  = m.recondicao||{};
+  const rLabel = recon.prata?"◇ PRATA":recon.bronze?"◇ BRONZE":null;
 
-  // ── Borda superior: running=verde, paused=accent ───────────────
-  const topBorder  = run?"#22C55E":accent;
-  const borderCol  = run?`rgba(34,197,94,0.5)`:`rgba(${rgb},0.35)`;
+  const topBorder = run?"#22C55E":accent;
+  const borderCol = run?"rgba(34,197,94,0.5)":`rgba(${rgb},${dark?0.35:0.5})`;
+
+  // fundos adaptativos por modo
+  const cardBg = dark
+    ? (run
+      ? `linear-gradient(135deg,rgba(34,197,94,0.1) 0%,rgba(${rgb},0.06) 60%,rgba(10,4,8,0.98) 100%)`
+      : `linear-gradient(135deg,rgba(${rgb},0.12) 0%,rgba(8,4,6,0.98) 100%)`)
+    : (run
+      ? `linear-gradient(135deg,rgba(34,197,94,0.1) 0%,rgba(${rgb},0.06) 60%,rgba(255,255,255,0.97) 100%)`
+      : `linear-gradient(135deg,rgba(${rgb},0.08) 0%,rgba(255,255,255,0.97) 100%)`);
+
+  const cardShadow = dark
+    ? (run
+      ? `0 0 18px rgba(34,197,94,0.2),0 0 35px rgba(${rgb},0.2),inset 0 0 16px rgba(${rgb},0.05)`
+      : `0 0 20px rgba(${rgb},0.25),0 0 40px rgba(${rgb},0.1)`)
+    : `0 2px 12px rgba(${rgb},0.15),0 0 0 1px rgba(${rgb},0.12)`;
 
   return(
     <div style={{
       position:"relative",height:"100%",
       display:"flex",flexDirection:"column",gap:6,
       padding:"12px 14px 10px",
-      background:run
-        ? `linear-gradient(135deg,rgba(34,197,94,0.1) 0%,rgba(${rgb},0.06) 60%,rgba(10,4,8,0.98) 100%)`
-        : `linear-gradient(135deg,rgba(${rgb},0.12) 0%,rgba(8,4,6,0.98) 100%)`,
+      background:cardBg,
       border:`1px solid ${borderCol}`,
       borderTop:`3px solid ${topBorder}`,
-      boxShadow:run
-        ? `0 0 18px rgba(34,197,94,0.2),0 0 35px rgba(${rgb},0.2),inset 0 0 16px rgba(${rgb},0.05)`
-        : `0 0 20px rgba(${rgb},0.25),0 0 40px rgba(${rgb},0.1)`,
+      boxShadow:cardShadow,
       overflow:"hidden",
       clipPath:"polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))",
     }}>
@@ -198,14 +222,13 @@ function BoardCell({m, D, forceCategory=null}){
       {/* scan sweep */}
       <div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:0,
         background:run
-          ?`linear-gradient(110deg,transparent 30%,rgba(34,197,94,0.06) 50%,transparent 70%)`
-          :`linear-gradient(135deg,rgba(${rgb},0.05),transparent 60%)`,
+          ?`linear-gradient(110deg,transparent 30%,rgba(34,197,94,${dark?0.06:0.04}) 50%,transparent 70%)`
+          :`linear-gradient(135deg,rgba(${rgb},${dark?0.05:0.03}),transparent 60%)`,
         animation:run?"hudScan 5s linear infinite":"hudPulse 3s ease-in-out infinite"}}/>
 
-      {/* ── ROW 1: dot + status + badges + TIMER ── */}
+      {/* ROW 1: dot + status + badges + TIMER */}
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,zIndex:1}}>
         <div style={{display:"flex",alignItems:"center",gap:6}}>
-          {/* dot de status */}
           <span style={{width:7,height:7,borderRadius:"50%",flexShrink:0,
             background:run?"#22C55E":paused?"#F59E0B":accent,
             boxShadow:run?`0 0 8px #22C55E,0 0 16px rgba(34,197,94,0.5)`:paused?`0 0 6px rgba(245,158,11,0.5)`:`0 0 6px rgba(${rgb},0.5)`,
@@ -215,12 +238,10 @@ function BoardCell({m, D, forceCategory=null}){
             color:run?"#22C55E":paused?"#F59E0B":accent}}>
             {run?"ACTIVE":paused?"PAUSED":"IDLE"}
           </span>
-          {/* badge categoria */}
-          <HudTag color={accent} label={cat.label} glow={true}/>
-          {rLabel&&<HudTag color={CAT.recon.accent} label={rLabel}/>}
-          {m.prioridade&&catKey!=="prio"&&<HudTag color={CAT.prio.accent} label="⚑ PRIO" glow/>}
+          <HudTag color={accent} label={cat.label} glow={dark}/>
+          {rLabel&&<HudTag color={CAT.recon.accent} label={rLabel} glow={dark}/>}
+          {m.prioridade&&catKey!=="prio"&&<HudTag color={CAT.prio.accent} label="⚑ PRIO" glow={dark}/>}
         </div>
-        {/* TIMER */}
         <div style={{fontFamily:"'Orbitron',monospace",
           fontSize:run?"clamp(16px,1.45vw,21px)":"clamp(12px,1vw,15px)",fontWeight:900,
           color:timerCol,letterSpacing:"0.05em",
@@ -230,48 +251,54 @@ function BoardCell({m, D, forceCategory=null}){
         </div>
       </div>
 
-      {/* ── ROW 2: NS grande + modelo ── */}
+      {/* ROW 2: NS grande + modelo */}
       <div style={{zIndex:1}}>
         <div style={{fontFamily:"'Orbitron',monospace",
           fontSize:run?"clamp(15px,1.4vw,20px)":"clamp(13px,1.15vw,17px)",fontWeight:900,
-          color:"#f0f0f0",letterSpacing:"0.07em",lineHeight:1.1,
-          textShadow:run?`0 0 12px rgba(255,255,255,0.4),0 0 20px rgba(${rgb},0.3)`:`0 0 8px rgba(${rgb},0.4)`,
+          color:dark?"#f0f0f0":"#0d0e1a",letterSpacing:"0.07em",lineHeight:1.1,
+          textShadow:dark
+            ?(run?`0 0 12px rgba(255,255,255,0.4),0 0 20px rgba(${rgb},0.3)`:`0 0 8px rgba(${rgb},0.4)`)
+            :"none",
           whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",
           transition:"font-size 0.3s"}}>
           {m.serie||"—"}
         </div>
         <div style={{fontFamily:"'JetBrains Mono',monospace",
-          fontSize:"clamp(9px,0.7vw,11px)",color:"rgba(160,160,160,0.7)",marginTop:2,
-          whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+          fontSize:"clamp(9px,0.7vw,11px)",
+          color:dark?"rgba(160,160,160,0.7)":"rgba(30,30,60,0.6)",
+          marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
           {m.modelo||"—"}
         </div>
       </div>
 
-      {/* ── ROW 3: primeira tarefa pendente ── */}
+      {/* ROW 3: primeira tarefa pendente */}
       {tasks.length>0&&(
         <div style={{display:"flex",alignItems:"center",gap:6,zIndex:1,
           padding:"5px 8px",
-          background:`rgba(${rgb},0.1)`,
+          background:dark?`rgba(${rgb},0.1)`:`rgba(${rgb},0.07)`,
           borderLeft:`2px solid rgba(${rgb},0.6)`}}>
           <span style={{fontFamily:"'JetBrains Mono',monospace",
             fontSize:"clamp(7px,0.55vw,9px)",color:accent,
             letterSpacing:"0.2em",flexShrink:0,fontWeight:700}}>TASK</span>
           <span style={{fontFamily:"'JetBrains Mono',monospace",
-            fontSize:"clamp(9px,0.72vw,11px)",color:"rgba(210,210,210,0.85)",
+            fontSize:"clamp(9px,0.72vw,11px)",
+            color:dark?"rgba(210,210,210,0.85)":"rgba(20,20,50,0.85)",
             whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
             {tasks.filter(t=>!t.concluida)[0]?.texto || tasks[0]?.texto}
           </span>
         </div>
       )}
 
-      {/* ── ROW 4: chips de tarefas ── */}
+      {/* ROW 4: chips de tarefas */}
       {tasks.length>0&&(
         <div style={{display:"flex",flexWrap:"wrap",gap:4,zIndex:1,marginTop:"auto"}}>
           {tasks.map((t,i)=>(
             <span key={i} style={{fontFamily:"'JetBrains Mono',monospace",
               fontSize:"clamp(8px,0.6vw,9px)",padding:"2px 8px",
-              background:t.concluida?"rgba(34,197,94,0.12)":`rgba(${rgb},0.07)`,
-              color:t.concluida?"#22C55E":accent,
+              background:t.concluida
+                ?`rgba(34,197,94,${dark?0.12:0.1})`
+                :`rgba(${rgb},${dark?0.07:0.06})`,
+              color:t.concluida?"#16a34a":accent,
               border:`1px solid ${t.concluida?"rgba(34,197,94,0.4)":`rgba(${rgb},0.3)`}`,
               textDecoration:t.concluida?"line-through":"none",
               clipPath:"polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%)",
@@ -282,9 +309,9 @@ function BoardCell({m, D, forceCategory=null}){
         </div>
       )}
 
-      {/* ── Progress bar: vermelho→accent ── */}
+      {/* Progress bar */}
       {tasks.length>0&&(
-        <div style={{height:2,background:"rgba(255,255,255,0.04)",overflow:"hidden",zIndex:1}}>
+        <div style={{height:2,background:`rgba(0,0,0,${dark?0.04:0.07})`,overflow:"hidden",zIndex:1}}>
           <div style={{height:"100%",width:`${pct}%`,
             background:`linear-gradient(90deg,#c8102e,${accent})`,
             boxShadow:`0 0 6px rgba(${rgb},0.5)`,transition:"width 0.5s"}}/>
@@ -517,6 +544,7 @@ function CalendarFila({items, D}){
 //  ROW ITEM — linha compacta (Prioritárias, NTS, Recon, Concluídas)
 // ─────────────────────────────────────────────────────────────────────────────
 function RowItem({m, idx, D, forceCategory=null, showTimer=true, showDate=false}){
+  const dark    = D.dark;
   const elapsed = useLiveTimer(m);
   const run     = m.timer_status==="running";
   const tasks   = m.tarefas||[];
@@ -538,55 +566,46 @@ function RowItem({m, idx, D, forceCategory=null, showTimer=true, showDate=false}
       display:"flex",alignItems:"center",gap:12,
       padding:"8px 12px",
       background:isCon
-        ?`rgba(34,197,94,0.07)`
+        ?`rgba(34,197,94,${dark?0.07:0.05})`
         :run
-        ?`linear-gradient(90deg,rgba(34,197,94,0.08),rgba(${rgb},0.06))`
-        :`rgba(${rgb},0.06)`,
-      border:`1px solid rgba(${rgb},0.25)`,
+        ?`linear-gradient(90deg,rgba(34,197,94,${dark?0.08:0.06}),rgba(${rgb},${dark?0.06:0.04}))`
+        :`rgba(${rgb},${dark?0.06:0.04})`,
+      border:`1px solid rgba(${rgb},${dark?0.25:0.3})`,
       borderLeft:`3px solid ${run?"#22C55E":accent}`,
-      boxShadow:`0 0 12px rgba(${rgb},0.15)`,
+      boxShadow:`0 0 ${dark?12:6}px rgba(${rgb},${dark?0.15:0.08})`,
       borderRadius:"4px",
       clipPath:"polygon(0 0,calc(100% - 6px) 0,100% 6px,100% 100%,6px 100%,0 calc(100% - 6px))",
     }}>
-      {/* index */}
       <span style={{fontFamily:"'Orbitron',monospace",fontSize:"9px",fontWeight:700,
-        color:`rgba(${rgb},0.5)`,flexShrink:0,width:"16px",textAlign:"right"}}>
+        color:`rgba(${rgb},${dark?0.5:0.6})`,flexShrink:0,width:"16px",textAlign:"right"}}>
         {String(idx+1).padStart(2,"0")}
       </span>
-
-      {/* NS + modelo */}
       <div style={{flex:1,minWidth:0}}>
         <div style={{fontFamily:"'Orbitron',monospace",
           fontSize:"clamp(12px,1.05vw,14px)",fontWeight:900,
-          color:"#f0f0f0",letterSpacing:"0.06em",
-          textShadow:`0 0 8px rgba(${rgb},0.4)`,
+          color:dark?"#f0f0f0":"#0d0e1a",letterSpacing:"0.06em",
+          textShadow:dark?`0 0 8px rgba(${rgb},0.4)`:"none",
           whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
           {m.serie||"—"}
         </div>
         <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"9px",
-          color:"rgba(150,150,150,0.7)",marginTop:"1px",
-          whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+          color:dark?"rgba(150,150,150,0.7)":"rgba(30,30,60,0.6)",
+          marginTop:"1px",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
           {m.modelo||"—"}
         </div>
       </div>
-
-      {/* Badges */}
       <div style={{display:"flex",gap:4,flexShrink:0,alignItems:"center"}}>
-        <HudTag color={accent} label={cat.label}/>
-        {rLabel&&<HudTag color={CAT.recon.accent} label={rLabel}/>}
-        {m.prioridade&&catKey!=="prio"&&<HudTag color={CAT.prio.accent} label="⚑"/>}
+        <HudTag color={accent} label={cat.label} glow={dark}/>
+        {rLabel&&<HudTag color={CAT.recon.accent} label={rLabel} glow={dark}/>}
+        {m.prioridade&&catKey!=="prio"&&<HudTag color={CAT.prio.accent} label="⚑" glow={dark}/>}
       </div>
-
-      {/* Data */}
       {showDate&&m.previsao_inicio&&(
         <div style={{fontFamily:"'Orbitron',monospace",fontSize:"9px",fontWeight:700,
           color:accent,letterSpacing:"0.06em",flexShrink:0,
-          textShadow:`0 0 8px rgba(${rgb},0.5)`}}>
+          textShadow:dark?`0 0 8px rgba(${rgb},0.5)`:"none"}}>
           {new Date(m.previsao_inicio).toLocaleDateString("pt-PT",{day:"2-digit",month:"2-digit"})}
         </div>
       )}
-
-      {/* Timer */}
       {showTimer&&(
         <div style={{fontFamily:"'Orbitron',monospace",fontSize:"clamp(12px,1vw,14px)",
           fontWeight:900,color:timerCol,letterSpacing:"0.04em",flexShrink:0,
@@ -594,11 +613,9 @@ function RowItem({m, idx, D, forceCategory=null, showTimer=true, showDate=false}
           {fmtHMS(elapsed)}
         </div>
       )}
-
-      {/* Progress bar */}
       {tasks.length>0&&(
         <div style={{position:"absolute",bottom:0,left:0,right:0,height:"2px",
-          background:"rgba(255,255,255,0.03)"}}>
+          background:`rgba(0,0,0,${dark?0.03:0.06})`}}>
           <div style={{height:"100%",width:`${pct}%`,
             background:`linear-gradient(90deg,#c8102e,${accent})`,
             boxShadow:`0 0 4px rgba(${rgb},0.4)`,transition:"width 0.5s"}}/>
@@ -614,7 +631,7 @@ function SecLabel({label,D}){
       padding:"8px 0 4px",flexShrink:0}}>
       <span style={{fontFamily:"'Orbitron',monospace",
         fontSize:"clamp(10px,0.78vw,12px)",fontWeight:800,letterSpacing:"0.18em",
-        color:D.muted}}>
+        color:D.dark?D.muted:'rgba(30,30,60,0.5)'}}>
         {label}
       </span>
       <div style={{flex:1,height:"1px",background:`linear-gradient(90deg,${D.muted}55,transparent)`}}/>
@@ -693,7 +710,7 @@ function Empty({label,D}){
   return(
     <div style={{position:"relative",display:"flex",alignItems:"center",justifyContent:"center",flex:1,
       flexDirection:"column",gap:"10px",
-      color:D.muted,fontFamily:"'Orbitron',monospace",
+      color:D.dark?D.muted:'rgba(30,30,60,0.45)',fontFamily:"'Orbitron',monospace",
       fontSize:"clamp(13px,1.1vw,17px)",fontWeight:600,letterSpacing:"0.22em",
       textTransform:"uppercase"}}>
       <div style={{position:"relative",padding:"24px 40px",border:`1px dashed ${D.muted}55`}}>
@@ -785,7 +802,7 @@ function GanttChart({ machines, D }) {
       <div style={{
         position:"relative",height:"36px",flexShrink:0,
         borderBottom:`1px solid rgba(210,210,210,0.2)`,
-        background:"rgba(14,5,9,0.97)",
+        background:D.dark?"rgba(14,5,9,0.97)":"rgba(245,246,250,0.98)",
         zIndex:5,
       }}>
         {ruleDays.map((d,i) => {
@@ -920,7 +937,7 @@ function GanttChart({ machines, D }) {
         })}
         {blocks.length>MAX_VISIBLE&&(
           <div style={{textAlign:"center",fontFamily:"monospace",fontSize:"9px",
-            color:"rgba(180,180,180,0.4)",letterSpacing:"0.1em",padding:"4px 0"}}>
+            color:D.dark?"rgba(180,180,180,0.4)":"rgba(30,30,60,0.4)",letterSpacing:"0.1em",padding:"4px 0"}}>
             +{blocks.length-MAX_VISIBLE} MÁQUINAS NÃO VISÍVEIS
           </div>
         )}
