@@ -3,11 +3,12 @@ import WatcherLogo from "./WatcherLogo";
 
 export default function PageHeader({ title, subtitle, accent = "pink", right = null, children }) {
   const accents = {
-    pink:   { c: "#FF2D78", glow: "rgba(255,45,120,0.7)" },
-    blue:   { c: "#4D9FFF", glow: "rgba(77,159,255,0.7)" },
-    green:  { c: "#22C55E", glow: "rgba(34,197,94,0.7)" },
-    purple: { c: "#9B5CF6", glow: "rgba(155,92,246,0.7)" },
-    amber:  { c: "#F59E0B", glow: "rgba(245,158,11,0.7)" },
+    pink:   { c: "#C8102E", glow: "rgba(200,16,46,0.7)"   },  // Stark red
+    blue:   { c: "#c0c0c0", glow: "rgba(200,200,200,0.5)" },  // prata
+    green:  { c: "#22C55E", glow: "rgba(34,197,94,0.7)"   },
+    purple: { c: "#9B5CF6", glow: "rgba(155,92,246,0.7)"  },
+    amber:  { c: "#D4AF37", glow: "rgba(212,175,55,0.7)"  },  // gold
+    gold:   { c: "#D4AF37", glow: "rgba(212,175,55,0.7)"  },
   };
   const a = accents[accent] || accents.pink;
 
@@ -20,7 +21,7 @@ export default function PageHeader({ title, subtitle, accent = "pink", right = n
       <div
         style={{
           position: "absolute", top: 0, left: 0, right: 0, height: "2px",
-          background: `linear-gradient(90deg, transparent 0%, ${a.c} 50%, transparent 100%)`,
+          background: `linear-gradient(90deg, transparent 0%, rgba(212,175,55,0.6) 30%, ${a.c} 55%, rgba(212,175,55,0.6) 80%, transparent 100%)`,
           opacity: 0.9,
         }}
       />
