@@ -122,6 +122,47 @@ function Clock({D}){
 //  BIG BOARD CELL — card compacto adaptável (usado em Em Andamento)
 //  Tamanho adapta-se automaticamente ao nº de itens via CSS grid auto-fit
 // ─────────────────────────────────────────────────────────────────────────────
+function ReactorGauge({run, pct, elapsed, barCol}){
+  // Arc reactor SVG circular estilo mockup
+  const r = 42, circ = 2*Math.PI*r;
+  const offset = circ - (pct/100)*circ;
+  return(
+    <div style={{position:"relative",width:90,height:90,flexShrink:0,display:"grid",placeItems:"center"}}>
+      <svg viewBox="0 0 100 100" width="90" height="90" style={{position:"absolute",inset:0}}>
+        {/* outer gold ring */}
+        <circle cx="50" cy="50" r="48" fill="none" stroke="#b87617" strokeWidth="1" opacity="0.5"/>
+        {/* progress arc — vermelho/gold */}
+        <circle cx="50" cy="50" r={r} fill="none"
+          stroke={run?"#ffb547":"rgba(255,181,71,0.4)"} strokeWidth="2.5"
+          strokeDasharray={circ} strokeDashoffset={offset}
+          strokeLinecap="round"
+          style={{transformOrigin:"50px 50px",transform:"rotate(-90deg)",
+            filter:run?`drop-shadow(0 0 5px #ffb547)`:"none",transition:"stroke-dashoffset 1s"}}/>
+        {/* divisores internos estilo reactor */}
+        {[0,45,90,135,180,225,270,315].map((a,i)=>{
+          const rad=a*Math.PI/180, x1=50+32*Math.cos(rad), y1=50+32*Math.sin(rad);
+          const x2=50+38*Math.cos(rad), y2=50+38*Math.sin(rad);
+          return<line key={i} x1={x1} y1={y1} x2={x2} y2={y2}
+            stroke={run?"#ffb547":"rgba(255,181,71,0.35)"} strokeWidth="1"/>;
+        })}
+        {/* inner ring */}
+        <circle cx="50" cy="50" r="28" fill="none" stroke="rgba(255,181,71,0.2)" strokeWidth="0.8"/>
+      </svg>
+      {/* core — arc reactor centre */}
+      <div style={{width:20,height:20,borderRadius:"50%",
+        background:`radial-gradient(circle,${run?"#5cffff":"rgba(92,255,255,0.4)"} 0%,${run?"rgba(92,255,255,0.3)":"rgba(92,255,255,0.05)"} 70%)`,
+        boxShadow:run?`0 0 12px #5cffff,0 0 24px rgba(92,255,255,0.5)`:"0 0 6px rgba(92,255,255,0.2)",
+        animation:run?"helmetPulse 2s infinite":"none",zIndex:2}}/>
+      {/* label abaixo */}
+      <div style={{position:"absolute",bottom:2,left:0,right:0,textAlign:"center",
+        fontFamily:"'Orbitron',monospace",fontSize:"clamp(7px,0.6vw,8px)",fontWeight:700,
+        color:run?"#ffb547":"rgba(255,181,71,0.5)",letterSpacing:"0.1em"}}>
+        {fmtHMS(elapsed).slice(0,5)} / SHIFT
+      </div>
+    </div>
+  );
+}
+
 function BoardCell({m, D}){
   const elapsed = useLiveTimer(m);
   const run    = m.timer_status==="running";
@@ -132,125 +173,115 @@ function BoardCell({m, D}){
   const tasks  = m.tarefas||[];
   const done   = tasks.filter(t=>t.concluida).length;
   const pct    = tasks.length?Math.round(done/tasks.length*100):0;
-  const barCol = run?D.green:D.yellow;
-
-  // STARK: accent dourado quando prio, verde quando running
-  const starkAccent = run ? D.green : prio ? D.yellow : D.blue;
+  const barCol = run?"#ffb547":"rgba(255,181,71,0.5)";
+  const borderCol = run?"rgba(255,181,71,0.7)":prio?"rgba(255,181,71,0.45)":"rgba(255,181,71,0.2)";
 
   return(
     <div style={{
       position:"relative",
-      background:`linear-gradient(135deg, rgba(200,16,46,0.14), transparent 40%), linear-gradient(180deg, ${D.card} 0%, ${D.cardB} 100%)`,
-      border:`1px solid ${prio ? D.yellow+"88" : run ? D.green+"66" : "rgba(255,181,71,0.18)"}`,
-      borderTop:`3px solid ${barCol}`,
-      padding:"12px 14px 10px",
-      display:"flex",flexDirection:"column",gap:"7px",
-      boxShadow: run
-        ? `0 0 0 1px ${D.green}44, 0 0 22px ${D.green}33, inset 0 0 20px ${D.green}08`
+      display:"flex",flexDirection:"row",alignItems:"center",gap:14,
+      padding:"10px 16px 10px 12px",
+      background:run
+        ? `linear-gradient(135deg,rgba(200,16,46,0.22),rgba(100,8,14,0.95))`
+        : `linear-gradient(135deg,rgba(200,16,46,0.12),rgba(30,7,11,0.97))`,
+      border:`1px solid ${borderCol}`,
+      boxShadow:run
+        ? `0 0 24px rgba(255,181,71,0.25),0 0 48px rgba(200,16,46,0.15),inset 0 0 20px rgba(200,16,46,0.1)`
         : prio
-        ? `0 0 0 1px ${D.yellow}55, 0 0 18px ${D.yellow}44, inset 0 0 16px rgba(255,181,71,0.06)`
-        : `0 0 12px rgba(200,16,46,0.12)`,
+        ? `0 0 16px rgba(255,181,71,0.15),inset 0 0 14px rgba(200,16,46,0.08)`
+        : `0 0 10px rgba(200,16,46,0.1)`,
       overflow:"hidden",
-      clipPath:"polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))",
+      clipPath:"polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,12px 100%,0 calc(100% - 12px))",
     }}>
-      {/* rivets nos cantos — estilo armadura */}
-      {[{top:7,left:7},{top:7,right:7},{bottom:7,left:7},{bottom:7,right:7}].map((pos,i)=>(
+      {/* rivets */}
+      {[{top:6,left:6},{top:6,right:6},{bottom:6,left:6},{bottom:6,right:6}].map((pos,i)=>(
         <span key={i} style={{position:"absolute",...pos,width:5,height:5,borderRadius:"50%",
           background:`radial-gradient(circle,#ffd166 30%,#b87617 70%)`,
-          boxShadow:`0 0 4px rgba(255,181,71,0.7)`,zIndex:3,pointerEvents:"none"}}/>
+          boxShadow:`0 0 4px rgba(255,181,71,0.8)`,zIndex:4,pointerEvents:"none"}}/>
       ))}
-      {/* inner trim dourado */}
-      <span style={{position:"absolute",top:3,left:3,right:3,bottom:3,pointerEvents:"none",
-        border:`1px solid rgba(255,181,71,0.08)`,
-        clipPath:"polygon(9px 0,calc(100% - 9px) 0,100% 9px,100% calc(100% - 9px),calc(100% - 9px) 100%,9px 100%,0 calc(100% - 9px),0 9px)"}}/>
-      {/* scan sweep dourado no card em curso */}
-      {run && (
-        <div style={{position:"absolute",inset:0,pointerEvents:"none",
-          background:`linear-gradient(110deg, transparent 35%, rgba(255,181,71,0.08) 50%, transparent 65%)`,
-          backgroundSize:"200% 100%",
-          animation:"hudScan 4.5s linear infinite",zIndex:0}}/>
-      )}
-      {/* PRIO glow pulse */}
-      {prio && !run && (
-        <div style={{position:"absolute",inset:0,pointerEvents:"none",
-          background:`linear-gradient(135deg, rgba(245,158,11,0.07), transparent 60%)`,
-          animation:"hudPulse 2.5s ease-in-out infinite",zIndex:0}}/>
-      )}
-      <HudCorners color={starkAccent} size={9} thickness={1.5} inset={2} opacity={0.8}/>
+      {/* scan sweep */}
+      {run&&<div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:0,
+        background:`linear-gradient(110deg,transparent 35%,rgba(255,181,71,0.07) 50%,transparent 65%)`,
+        backgroundSize:"200% 100%",animation:"hudScan 4s linear infinite"}}/>}
+      {prio&&!run&&<div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:0,
+        background:`linear-gradient(135deg,rgba(245,158,11,0.06),transparent 60%)`,
+        animation:"hudPulse 2.5s ease-in-out infinite"}}/>}
 
-      {/* NS — protagonista dourado */}
-      <div style={{position:"relative",fontFamily:"'Orbitron',monospace",
-        fontSize:"clamp(15px,1.25vw,20px)",fontWeight:900,
-        color:"#ffd166",letterSpacing:"0.07em",
-        textShadow:`0 0 14px rgba(255,181,71,0.7), 0 0 28px rgba(255,181,71,0.3)`,
-        whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",zIndex:1}}>
-        {m.serie||"—"}
-      </div>
-      {/* Modelo */}
-      <div style={{position:"relative",fontFamily:"'JetBrains Mono',monospace",
-        fontSize:"clamp(9px,0.75vw,11px)",color:"#c9a880",
-        whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",marginTop:"-4px",zIndex:1}}>
-        {m.modelo||"—"}
-      </div>
+      {/* REACTOR GAUGE — esquerda */}
+      <ReactorGauge run={run} pct={pct} elapsed={elapsed} barCol={barCol}/>
 
-      {/* Badges */}
-      {(prio||rLabel)&&(
-        <div style={{position:"relative",display:"flex",gap:"4px",flexWrap:"wrap",zIndex:1}}>
-          {prio&&<HudTag color={D.yellow} label="⚑ PRIO" glow={true}/>}
-          {rLabel&&<HudTag color={rColor} label={`◇ ${rLabel}`}/>}
+      {/* CONTENT — centro */}
+      <div style={{flex:1,minWidth:0,display:"flex",flexDirection:"column",gap:6,zIndex:1}}>
+        {/* status tag + timer */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <HudTag color={barCol} label={run?"◆ ACTIVE":"◌ PAUSED"} glow={run}/>
+            {prio&&<HudTag color={D.yellow} label="⚑ PRIO" glow={true}/>}
+            {rLabel&&<HudTag color={rColor} label={`◇ ${rLabel}`}/>}
+          </div>
+          {/* TIMER — grande, à direita */}
+          <div style={{fontFamily:"'Orbitron',monospace",
+            fontSize:run?"clamp(22px,2vw,30px)":"clamp(16px,1.4vw,22px)",fontWeight:900,
+            color:run?"#ffd166":"rgba(255,181,71,0.5)",letterSpacing:"0.06em",
+            textShadow:run?`0 0 16px rgba(255,181,71,0.8),0 0 32px rgba(255,181,71,0.3)`:"none",
+            transition:"font-size 0.3s"}}>
+            {fmtHMS(elapsed)}
+          </div>
         </div>
-      )}
 
-      {/* Tarefas compactas */}
-      {tasks.length>0&&(
-        <div style={{position:"relative",display:"flex",flexWrap:"wrap",gap:"3px",zIndex:1}}>
+        {/* NS + modelo */}
+        <div style={{display:"flex",alignItems:"baseline",gap:10}}>
+          <div style={{fontFamily:"'Orbitron',monospace",
+            fontSize:run?"clamp(17px,1.5vw,22px)":"clamp(14px,1.2vw,18px)",fontWeight:900,
+            color:"#ffd166",letterSpacing:"0.08em",
+            textShadow:run?`0 0 16px rgba(255,181,71,0.8),0 0 32px rgba(255,181,71,0.3)`:`0 0 10px rgba(255,181,71,0.4)`,
+            whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",
+            transition:"font-size 0.3s"}}>
+            ▶ {m.serie||"—"}
+          </div>
+          <div style={{fontFamily:"'JetBrains Mono',monospace",
+            fontSize:"clamp(9px,0.75vw,11px)",color:"#c9a880",flexShrink:0}}>
+            {m.modelo||"—"}
+          </div>
+        </div>
+
+        {/* Tarefas */}
+        {tasks.length>0&&(
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:"clamp(8px,0.65vw,9px)",
+              color:"rgba(255,181,71,0.5)",letterSpacing:"0.16em",flexShrink:0}}>◆ TASK</span>
+            <span style={{fontFamily:"'JetBrains Mono',monospace",
+              fontSize:"clamp(9px,0.75vw,11px)",color:"#c9a880",
+              whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+              {tasks.filter(t=>!t.concluida)[0]?.texto || tasks[0]?.texto || "—"}
+            </span>
+          </div>
+        )}
+
+        {/* Chips extra + progress */}
+        <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
           {tasks.map((t,i)=>(
             <span key={i} style={{fontFamily:"'JetBrains Mono',monospace",
-              fontSize:"clamp(9px,0.72vw,10px)",padding:"2px 7px",
-              background:t.concluida?`${D.green}18`:`rgba(255,181,71,0.1)`,
+              fontSize:"clamp(8px,0.65vw,9px)",padding:"1px 7px",
+              background:t.concluida?`${D.green}18`:`rgba(255,181,71,0.08)`,
               color:t.concluida?D.green:"#c9a880",
-              border:`1px solid ${t.concluida?D.green+"44":"rgba(255,181,71,0.25)"}`,
+              border:`1px solid ${t.concluida?D.green+"44":"rgba(255,181,71,0.2)"}`,
               textDecoration:t.concluida?"line-through":"none",
-              clipPath:"polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px)",
-              fontWeight:600,letterSpacing:"0.02em"}}>
+              clipPath:"polygon(3px 0,100% 0,calc(100% - 3px) 100%,0 100%)",
+              fontWeight:600,letterSpacing:"0.06em"}}>
               {t.texto}
             </span>
           ))}
         </div>
-      )}
 
-      {/* Progress — vermelho → dourado */}
-      {tasks.length>0&&(
-        <div style={{position:"relative",zIndex:1,height:"3px",background:"rgba(255,255,255,0.05)",overflow:"hidden"}}>
-          <div style={{height:"100%",width:`${pct}%`,
-            background:`linear-gradient(90deg,#c8102e,#ffb547,#ffd166)`,
-            boxShadow:`0 0 8px rgba(255,181,71,0.6)`,
-            transition:"width 0.5s"}}/>
-        </div>
-      )}
-
-      {/* Timer */}
-      <div style={{position:"relative",zIndex:1,display:"flex",alignItems:"center",
-        justifyContent:"space-between",marginTop:"auto",paddingTop:"6px",
-        borderTop:`1px solid rgba(255,181,71,0.15)`}}>
-        <div style={{display:"flex",alignItems:"center",gap:"5px"}}>
-          <div style={{width:"7px",height:"7px",background:barCol,
-            boxShadow:`0 0 10px ${barCol}, 0 0 20px ${barCol}55`,
-            borderRadius:"50%",
-            animation:run?"blink 1.2s ease-in-out infinite":"none"}}/>
-          <span style={{fontFamily:"'Orbitron',monospace",
-            fontSize:"clamp(8px,0.65vw,10px)",fontWeight:700,
-            color:barCol,letterSpacing:"0.14em",
-            textShadow:run?`0 0 8px ${barCol}`:"none"}}>
-            {run?"● EM CURSO":"◌ PAUSADO"}
-          </span>
-        </div>
-        <div style={{fontFamily:"'Orbitron',monospace",
-          fontSize:"clamp(16px,1.4vw,22px)",fontWeight:900,
-          color:barCol,letterSpacing:"0.04em",
-          textShadow:`0 0 14px ${barCol}88, 0 0 28px ${barCol}33`}}>
-          {fmtHMS(elapsed)}
-        </div>
+        {/* Barra de progresso */}
+        {tasks.length>0&&(
+          <div style={{height:2,background:"rgba(255,255,255,0.05)",overflow:"hidden",borderRadius:1}}>
+            <div style={{height:"100%",width:`${pct}%`,
+              background:`linear-gradient(90deg,#c8102e,#ffb547,#ffd166)`,
+              boxShadow:`0 0 8px rgba(255,181,71,0.5)`,transition:"width 0.5s"}}/>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -741,29 +772,29 @@ function GanttChart({ machines, D }) {
   const BAR_H = 32, GAP = 6;
 
   const barBg = b => {
-    if (b.overrun)            return "linear-gradient(90deg,#F59E0B,#EF4444)";
-    if (b.isActive && b.run)  return "linear-gradient(90deg,#4D9FFF,#FF2D78)";
-    if (b.isActive)           return "linear-gradient(90deg,rgba(77,159,255,0.8),rgba(255,45,120,0.8))";
-    if (b.isPrio)             return "linear-gradient(90deg,rgba(245,158,11,0.75),rgba(239,68,68,0.5))";
-    return "rgba(155,92,246,0.5)";
+    if (b.overrun)            return "linear-gradient(90deg,#ffb547,#c8102e)";
+    if (b.isActive && b.run)  return "linear-gradient(90deg,#c8102e,#ff2240,#ffb547)";
+    if (b.isActive)           return "linear-gradient(90deg,rgba(200,16,46,0.85),rgba(255,181,71,0.7))";
+    if (b.isPrio)             return "linear-gradient(90deg,rgba(255,181,71,0.6),rgba(200,16,46,0.4))";
+    return "rgba(255,181,71,0.18)";
   };
   const barBorder = b => {
-    if (b.overrun)    return "1.5px solid rgba(239,68,68,0.8)";
-    if (b.isActive)   return "1.5px solid rgba(255,45,120,0.6)";
-    if (b.isPrio)     return "1.5px dashed rgba(245,158,11,0.8)";
-    return "1.5px dashed rgba(155,92,246,0.7)";
+    if (b.overrun)    return "1.5px solid rgba(255,181,71,0.9)";
+    if (b.isActive)   return "1.5px solid rgba(255,181,71,0.7)";
+    if (b.isPrio)     return "1.5px dashed rgba(255,181,71,0.6)";
+    return "1px solid rgba(255,181,71,0.25)";
   };
   const barShadow = b => {
-    if (b.overrun)           return "0 2px 10px rgba(239,68,68,0.35)";
-    if (b.isActive && b.run) return "0 2px 14px rgba(255,45,120,0.5)";
-    if (b.isActive)          return "0 2px 8px rgba(77,159,255,0.35)";
+    if (b.overrun)           return "0 2px 12px rgba(255,181,71,0.4)";
+    if (b.isActive && b.run) return "0 2px 16px rgba(200,16,46,0.5),0 0 8px rgba(255,181,71,0.3)";
+    if (b.isActive)          return "0 2px 8px rgba(200,16,46,0.3)";
     return "none";
   };
 
   if (blocks.length === 0) {
     return (
       <div style={{display:"flex",alignItems:"center",justifyContent:"center",flex:1,
-        color:D.muted,fontFamily:"monospace",fontSize:"13px",letterSpacing:"0.12em"}}>
+        color:"rgba(201,168,128,0.5)",fontFamily:"'Orbitron',monospace",fontSize:"11px",letterSpacing:"0.2em"}}>
         SEM PREVISÕES DEFINIDAS · CONFIGURAR NO WATCHER
       </div>
     );
@@ -777,8 +808,8 @@ function GanttChart({ machines, D }) {
       {/* ── Régua de dias ── */}
       <div style={{
         position:"relative",height:"34px",flexShrink:0,
-        borderBottom:`1.5px solid ${D.line}`,
-        background:D.surface,borderRadius:"6px 6px 0 0",
+        borderBottom:`1px solid rgba(255,181,71,0.2)`,
+        background:"rgba(20,7,11,0.9)",
       }}>
         {ruleDays.map((d,i) => {
           const left    = (i / numDays) * 100;
@@ -788,8 +819,8 @@ function GanttChart({ machines, D }) {
             <div key={i} style={{
               position:"absolute", left:left+"%", top:0,
               width:(100/numDays)+"%", height:"100%",
-              borderLeft: i>0 ? `1px solid ${isToday?"#FF2D78":isWE?"rgba(155,92,246,0.3)":D.line}` : "none",
-              background: isWE ? "rgba(155,92,246,0.06)" : "transparent",
+              borderLeft: i>0 ? `1px solid ${isToday?"#ff2240":"rgba(255,181,71,0.12)"}` : "none",
+              background: isWE ? "rgba(200,16,46,0.04)" : "transparent",
             }}>
               <div style={{
                 position:"absolute", top:"50%", left:"50%",
@@ -798,9 +829,9 @@ function GanttChart({ machines, D }) {
                 fontFamily:"'Orbitron',monospace",
                 fontSize: isToday ? "11px" : "9px",
                 fontWeight: isToday ? 900 : 600,
-                color: isToday ? "#FF2D78" : isWE ? D.purple : D.muted,
+                color: isToday ? "#ffd166" : isWE ? "rgba(255,181,71,0.4)" : "rgba(201,168,128,0.6)",
                 letterSpacing:"0.04em",
-                textShadow: isToday ? "0 0 10px rgba(255,45,120,0.8)" : "none",
+                textShadow: isToday ? "0 0 10px rgba(255,209,102,0.8)" : "none",
                 whiteSpace:"nowrap",
                 lineHeight:1.2,
               }}>
@@ -813,7 +844,7 @@ function GanttChart({ machines, D }) {
                 <div style={{
                   position:"absolute",bottom:0,left:"50%",transform:"translateX(-50%)",
                   width:"100%",height:"3px",
-                  background:"linear-gradient(90deg,transparent,#FF2D78,transparent)",
+                  background:"linear-gradient(90deg,transparent,#ff2240,#ffd166,transparent)",
                 }}/>
               )}
             </div>
@@ -823,8 +854,8 @@ function GanttChart({ machines, D }) {
         {nowPct>=0 && nowPct<=100 && (
           <div style={{
             position:"absolute",top:0,bottom:0,left:nowPct+"%",
-            width:"2px",background:"#FF2D78",
-            boxShadow:"0 0 12px rgba(255,45,120,0.9)",
+            width:"2px",background:"linear-gradient(180deg,#ff2240,#ffb547)",
+            boxShadow:"0 0 12px rgba(255,34,64,0.8),0 0 20px rgba(255,181,71,0.3)",
             zIndex:10,pointerEvents:"none",
           }}/>
         )}
@@ -841,7 +872,7 @@ function GanttChart({ machines, D }) {
               position:"absolute",top:0,bottom:0,left:left+"%",
               width: isWE ? (100/numDays)+"%" : "0",
               borderLeft: i>0 ? `1px dashed ${D.line}` : "none",
-              background: isWE ? "rgba(155,92,246,0.04)" : "transparent",
+              background: isWE ? "rgba(200,16,46,0.03)" : "transparent",
               pointerEvents:"none",zIndex:0,
             }}/>
           );
@@ -851,8 +882,8 @@ function GanttChart({ machines, D }) {
         {nowPct>=0 && nowPct<=100 && (
           <div style={{
             position:"absolute",top:0,bottom:0,left:nowPct+"%",
-            width:"2px",background:"#FF2D78",
-            boxShadow:"0 0 12px rgba(255,45,120,0.7), 0 0 24px rgba(255,45,120,0.3)",
+            width:"2px",background:"linear-gradient(180deg,#ff2240,#ffb547)",
+            boxShadow:"0 0 12px rgba(255,34,64,0.7),0 0 24px rgba(255,181,71,0.25)",
             zIndex:10,pointerEvents:"none",
           }}/>
         )}
@@ -944,22 +975,22 @@ function GanttChart({ machines, D }) {
       }}>
         <span style={{display:"flex",alignItems:"center",gap:"5px"}}>
           <span style={{display:"inline-block",width:"14px",height:"8px",borderRadius:"3px",
-            background:"linear-gradient(90deg,#4D9FFF,#FF2D78)"}}/>
+            background:"linear-gradient(90deg,#c8102e,#ffb547)"}}/>
           EM CURSO
         </span>
         <span style={{display:"flex",alignItems:"center",gap:"5px"}}>
           <span style={{display:"inline-block",width:"14px",height:"8px",borderRadius:"3px",
-            background:"rgba(155,92,246,0.55)",border:"1.5px dashed rgba(155,92,246,0.8)"}}/>
+            background:"rgba(255,181,71,0.18)",border:"1px solid rgba(255,181,71,0.35)"}}/>
           FILA
         </span>
         <span style={{display:"flex",alignItems:"center",gap:"5px"}}>
           <span style={{display:"inline-block",width:"14px",height:"8px",borderRadius:"3px",
-            background:"linear-gradient(90deg,#F59E0B,#EF4444)"}}/>
+            background:"linear-gradient(90deg,#ffb547,#c8102e)"}}/>
           ATRASADA
         </span>
         <span style={{display:"flex",alignItems:"center",gap:"5px"}}>
           <span style={{display:"inline-block",width:"2px",height:"14px",
-            background:"#FF2D78",boxShadow:"0 0 8px rgba(255,45,120,0.8)"}}/>
+            background:"linear-gradient(180deg,#ff2240,#ffb547)",boxShadow:"0 0 8px rgba(255,34,64,0.8)"}}/>
           HOJE
         </span>
         <span style={{marginLeft:"auto",fontFamily:"'Orbitron',monospace",fontSize:"8px",color:D.muted}}>
