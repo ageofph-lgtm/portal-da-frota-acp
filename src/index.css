@@ -149,6 +149,19 @@
   .font-orbitron   { font-family: 'Orbitron', monospace; }
 }
 
+/* STARK HUD — grid de fundo */
+.dark #root::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(212,175,55,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212,175,55,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
 /* ════════════════════════════════════════════════════════════
    BACKGROUND TEXTURES
    ════════════════════════════════════════════════════════════ */
