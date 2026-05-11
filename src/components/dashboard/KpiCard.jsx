@@ -1,15 +1,16 @@
 import React from "react";
 import { motion } from "framer-motion";
 
+// STARK ARMOR — semantic status colors
 const COLOR_MAP = {
-  slate:   { c: '#9DA0BC', glow: 'rgba(157,160,188,0.45)' },
-  emerald: { c: '#22C55E', glow: 'rgba(34,197,94,0.55)' },
-  red:     { c: '#EF4444', glow: 'rgba(239,68,68,0.55)' },
-  amber:   { c: '#F59E0B', glow: 'rgba(245,158,11,0.55)' },
-  blue:    { c: '#4D9FFF', glow: 'rgba(77,159,255,0.55)' },
-  teal:    { c: '#14B8A6', glow: 'rgba(20,184,166,0.55)' },
-  purple:  { c: '#9B5CF6', glow: 'rgba(155,92,246,0.55)' },
-  pink:    { c: '#FF2D78', glow: 'rgba(255,45,120,0.55)' },
+  slate:   { c: '#c8c8c8', glow: 'rgba(200,200,200,0.35)' },  // prata
+  emerald: { c: '#22C55E', glow: 'rgba(34,197,94,0.55)'   },  // prontas
+  red:     { c: '#EF4444', glow: 'rgba(239,68,68,0.55)'   },  // UTS
+  amber:   { c: '#F59E0B', glow: 'rgba(245,158,11,0.55)'  },  // aguarda
+  blue:    { c: '#4D9FFF', glow: 'rgba(77,159,255,0.55)'  },  // progresso
+  teal:    { c: '#00DDFF', glow: 'rgba(0,221,255,0.5)'    },  // a começar
+  purple:  { c: '#9B5CF6', glow: 'rgba(155,92,246,0.55)'  },  // avaliar
+  pink:    { c: '#C8102E', glow: 'rgba(200,16,46,0.55)'   },  // total
 };
 
 export default function KpiCard({ title, value, percentage, icon: Icon, color, delay = 0 }) {
@@ -21,11 +22,12 @@ export default function KpiCard({ title, value, percentage, icon: Icon, color, d
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay }}
       className="cyber-card clip-cyber p-4 relative overflow-hidden"
+      style={{ boxShadow: `0 0 24px ${c.glow.replace('0.55','0.15')}, 0 0 1px rgba(212,175,55,0.05) inset` }}
     >
       {/* faixa lateral colorida */}
       <div
         style={{
-          position: 'absolute', top: 0, left: 0, bottom: 0, width: '3px',
+          position: 'absolute', top: 0, left: 0, bottom: 0, width: '4px',
           background: `linear-gradient(180deg, ${c.c}, transparent)`,
           boxShadow: `0 0 10px ${c.glow}`,
         }}
