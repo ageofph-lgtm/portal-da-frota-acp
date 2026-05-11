@@ -174,19 +174,18 @@ function BoardCell({m, D, forceCategory=null}){
 
   const catKey   = forceCategory || getMachineCategory(m);
   const cat      = CAT[catKey] || CAT.andamento;
-  const accent   = dark ? cat.accent : cat.accent;
+  const accent   = cat.accent;
   const rgb      = cat.rgb;
 
   const timerCol  = run?"#22C55E":"#F59E0B";
   const timerGlow = run?"rgba(34,197,94,0.6)":"rgba(245,158,11,0.45)";
 
   const recon  = m.recondicao||{};
-  const rLabel = recon.prata?"◇ PRATA":recon.bronze?"◇ BRONZE":null;
+  const rLabel = recon.prata?"PRATA":recon.bronze?"BRONZE":null;
 
   const topBorder = run?"#22C55E":accent;
   const borderCol = run?"rgba(34,197,94,0.5)":`rgba(${rgb},${dark?0.35:0.5})`;
 
-  // fundos adaptativos por modo
   const cardBg = dark
     ? (run
       ? `linear-gradient(135deg,rgba(34,197,94,0.1) 0%,rgba(${rgb},0.06) 60%,rgba(10,4,8,0.98) 100%)`
@@ -197,125 +196,132 @@ function BoardCell({m, D, forceCategory=null}){
 
   const cardShadow = dark
     ? (run
-      ? `0 0 18px rgba(34,197,94,0.2),0 0 35px rgba(${rgb},0.2),inset 0 0 16px rgba(${rgb},0.05)`
-      : `0 0 20px rgba(${rgb},0.25),0 0 40px rgba(${rgb},0.1)`)
-    : `0 2px 12px rgba(${rgb},0.15),0 0 0 1px rgba(${rgb},0.12)`;
+      ? `0 0 18px rgba(34,197,94,0.2),0 0 35px rgba(${rgb},0.2)`
+      : `0 0 20px rgba(${rgb},0.25)`)
+    : `0 2px 12px rgba(${rgb},0.15)`;
 
+  // Tudo o que não é essencial fica escondido quando o card é pequeno
+  // Usamos uma estrutura de 2 secções: topo (sempre visível) e corpo (flex-grow)
   return(
     <div style={{
       position:"relative",
-      display:"flex",flexDirection:"column",gap:5,
-      padding:"8px 10px 8px",
+      display:"flex",flexDirection:"column",
+      padding:"6px 8px 4px",
       background:cardBg,
       border:`1px solid ${borderCol}`,
       borderTop:`3px solid ${topBorder}`,
       boxShadow:cardShadow,
       overflow:"hidden",
-      minHeight:0,
-      clipPath:"polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))",
+      clipPath:"polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px))",
     }}>
-      {/* corner rivets */}
-      {[{top:5,left:5},{top:5,right:5},{bottom:5,left:5},{bottom:5,right:5}].map((pos,i)=>(
-        <span key={i} style={{position:"absolute",...pos,width:4,height:4,borderRadius:"50%",
-          background:`radial-gradient(circle,${accent} 30%,rgba(${rgb},0.3) 70%)`,
-          boxShadow:`0 0 4px rgba(${rgb},0.6)`,zIndex:4,pointerEvents:"none"}}/>
-      ))}
       {/* scan sweep */}
       <div style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:0,
         background:run
-          ?`linear-gradient(110deg,transparent 30%,rgba(34,197,94,${dark?0.06:0.04}) 50%,transparent 70%)`
-          :`linear-gradient(135deg,rgba(${rgb},${dark?0.05:0.03}),transparent 60%)`,
-        animation:run?"hudScan 5s linear infinite":"hudPulse 3s ease-in-out infinite"}}/>
+          ?`linear-gradient(110deg,transparent 30%,rgba(34,197,94,${dark?0.05:0.03}) 50%,transparent 70%)`
+          :`linear-gradient(135deg,rgba(${rgb},${dark?0.04:0.02}),transparent 60%)`,
+        animation:run?"hudScan 5s linear infinite":"none"}}/>
 
-      {/* ROW 1: dot + status + badges + TIMER */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,zIndex:1}}>
-        <div style={{display:"flex",alignItems:"center",gap:6}}>
-          <span style={{width:7,height:7,borderRadius:"50%",flexShrink:0,
+      {/* ── LINHA 1: estado + timer ── sempre visível */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:4,zIndex:1,flexShrink:0}}>
+        {/* estado dot + label */}
+        <div style={{display:"flex",alignItems:"center",gap:4,minWidth:0,overflow:"hidden"}}>
+          <span style={{width:6,height:6,borderRadius:"50%",flexShrink:0,
             background:run?"#22C55E":paused?"#F59E0B":accent,
-            boxShadow:run?`0 0 8px #22C55E,0 0 16px rgba(34,197,94,0.5)`:paused?`0 0 6px rgba(245,158,11,0.5)`:`0 0 6px rgba(${rgb},0.5)`,
+            boxShadow:run?`0 0 6px #22C55E`:paused?`0 0 5px rgba(245,158,11,0.5)`:`0 0 5px rgba(${rgb},0.5)`,
             animation:run?"blink 1.2s ease-in-out infinite":"none"}}/>
-          <span style={{fontFamily:"'Orbitron',monospace",fontSize:"clamp(8px,0.62vw,10px)",
-            fontWeight:700,letterSpacing:"0.14em",
+          <span style={{fontFamily:"'Orbitron',monospace",fontSize:"9px",
+            fontWeight:700,letterSpacing:"0.1em",flexShrink:0,
             color:run?"#22C55E":paused?"#F59E0B":accent}}>
-            {run?"ACTIVE":paused?"PAUSED":"IDLE"}
+            {run?"RUN":paused?"PAUSED":"IDLE"}
           </span>
-          <HudTag color={accent} label={cat.label} glow={dark}/>
-          {rLabel&&<HudTag color={CAT.recon.accent} label={rLabel} glow={dark}/>}
-          {m.prioridade&&catKey!=="prio"&&<HudTag color={CAT.prio.accent} label="⚑ PRIO" glow={dark}/>}
+          {/* categoria tag */}
+          <span style={{
+            fontFamily:"'Orbitron',monospace",fontSize:"8px",fontWeight:700,letterSpacing:"0.08em",
+            padding:"1px 5px",color:accent,
+            background:`rgba(${rgb},0.15)`,border:`1px solid rgba(${rgb},0.4)`,
+            clipPath:"polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%)",
+            whiteSpace:"nowrap",flexShrink:0,overflow:"hidden",maxWidth:"90px",textOverflow:"ellipsis"
+          }}>{cat.label}</span>
+          {rLabel&&<span style={{
+            fontFamily:"'Orbitron',monospace",fontSize:"8px",fontWeight:700,letterSpacing:"0.08em",
+            padding:"1px 5px",color:CAT.recon.accent,
+            background:`rgba(155,92,246,0.15)`,border:`1px solid rgba(155,92,246,0.4)`,
+            clipPath:"polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%)",
+            whiteSpace:"nowrap",flexShrink:0
+          }}>{rLabel}</span>}
+          {m.prioridade&&catKey!=="prio"&&<span style={{
+            fontFamily:"'Orbitron',monospace",fontSize:"8px",fontWeight:700,
+            padding:"1px 5px",color:CAT.prio.accent,
+            background:`rgba(239,68,68,0.15)`,border:`1px solid rgba(239,68,68,0.4)`,
+            clipPath:"polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%)",
+            whiteSpace:"nowrap",flexShrink:0
+          }}>⚑</span>}
         </div>
+        {/* timer — sempre visível, tamanho adapta */}
         <div style={{fontFamily:"'Orbitron',monospace",
-          fontSize:run?"clamp(16px,1.45vw,21px)":"clamp(12px,1vw,15px)",fontWeight:900,
-          color:timerCol,letterSpacing:"0.05em",
-          textShadow:`0 0 12px ${timerGlow},0 0 24px ${timerGlow}`,
-          transition:"all 0.3s"}}>
+          fontSize:"clamp(11px,1.1vw,16px)",fontWeight:900,flexShrink:0,
+          color:timerCol,letterSpacing:"0.04em",
+          textShadow:`0 0 10px ${timerGlow}`}}>
           {fmtHMS(elapsed)}
         </div>
       </div>
 
-      {/* ROW 2: NS grande + modelo */}
-      <div style={{zIndex:1}}>
+      {/* ── LINHA 2: série + modelo ── sempre visível */}
+      <div style={{zIndex:1,flexShrink:0,marginTop:3}}>
         <div style={{fontFamily:"'Orbitron',monospace",
-          fontSize:run?"clamp(15px,1.4vw,20px)":"clamp(13px,1.15vw,17px)",fontWeight:900,
-          color:dark?"#f0f0f0":"#0d0e1a",letterSpacing:"0.07em",lineHeight:1.1,
-          textShadow:dark
-            ?(run?`0 0 12px rgba(255,255,255,0.4),0 0 20px rgba(${rgb},0.3)`:`0 0 8px rgba(${rgb},0.4)`)
-            :"none",
-          whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",
-          transition:"font-size 0.3s"}}>
+          fontSize:"clamp(11px,1.1vw,15px)",fontWeight:900,
+          color:dark?"#f0f0f0":"#0d0e1a",letterSpacing:"0.06em",lineHeight:1.15,
+          textShadow:dark?`0 0 8px rgba(${rgb},0.35)`:"none",
+          whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
           {m.serie||"—"}
         </div>
-        <div style={{fontFamily:"'JetBrains Mono',monospace",
-          fontSize:"clamp(9px,0.7vw,11px)",
-          color:dark?"rgba(160,160,160,0.7)":"rgba(30,30,60,0.6)",
-          marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+        <div style={{fontFamily:"monospace",fontSize:"10px",
+          color:dark?"rgba(150,150,150,0.7)":"rgba(30,30,60,0.6)",
+          marginTop:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
           {m.modelo||"—"}
         </div>
       </div>
 
-      {/* ROW 3: primeira tarefa pendente — só mostra se o card tiver espaço */}
+      {/* ── CORPO: task + chips — flex-grow, desaparece quando não há espaço ── */}
       {tasks.length>0&&(
-        <div style={{display:"flex",alignItems:"center",gap:6,zIndex:1,flexShrink:0,
-          padding:"4px 7px",
-          background:dark?`rgba(${rgb},0.1)`:`rgba(${rgb},0.07)`,
-          borderLeft:`2px solid rgba(${rgb},0.6)`}}>
-          <span style={{fontFamily:"'JetBrains Mono',monospace",
-            fontSize:"clamp(7px,0.5vw,9px)",color:accent,
-            letterSpacing:"0.2em",flexShrink:0,fontWeight:700}}>TASK</span>
-          <span style={{fontFamily:"'JetBrains Mono',monospace",
-            fontSize:"clamp(8px,0.62vw,10px)",
-            color:dark?"rgba(210,210,210,0.85)":"rgba(20,20,50,0.85)",
-            whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-            {tasks.filter(t=>!t.concluida)[0]?.texto || tasks[0]?.texto}
-          </span>
-        </div>
-      )}
-
-      {/* ROW 4: chips de tarefas */}
-      {tasks.length>0&&(
-        <div style={{display:"flex",flexWrap:"wrap",gap:3,zIndex:1,marginTop:"auto",flexShrink:0}}>
-          {tasks.map((t,i)=>(
-            <span key={i} style={{fontFamily:"'JetBrains Mono',monospace",
-              fontSize:"clamp(7px,0.55vw,9px)",padding:"1px 6px",
-              background:t.concluida
-                ?`rgba(34,197,94,${dark?0.12:0.1})`
-                :`rgba(${rgb},${dark?0.07:0.06})`,
-              color:t.concluida?"#16a34a":accent,
-              border:`1px solid ${t.concluida?"rgba(34,197,94,0.4)":`rgba(${rgb},0.3)`}`,
-              textDecoration:t.concluida?"line-through":"none",
-              clipPath:"polygon(4px 0,100% 0,calc(100% - 4px) 100%,0 100%)",
-              fontWeight:600,letterSpacing:"0.05em"}}>
-              {t.texto}
+        <div style={{flex:1,minHeight:0,display:"flex",flexDirection:"column",gap:3,
+          marginTop:4,zIndex:1,overflow:"hidden"}}>
+          {/* primeira tarefa */}
+          <div style={{display:"flex",alignItems:"center",gap:5,flexShrink:0,
+            padding:"3px 6px",
+            background:dark?`rgba(${rgb},0.1)`:`rgba(${rgb},0.07)`,
+            borderLeft:`2px solid rgba(${rgb},0.6)`,overflow:"hidden"}}>
+            <span style={{fontFamily:"monospace",fontSize:"8px",color:accent,
+              letterSpacing:"0.15em",flexShrink:0,fontWeight:700}}>TASK</span>
+            <span style={{fontFamily:"monospace",fontSize:"9px",
+              color:dark?"rgba(210,210,210,0.85)":"rgba(20,20,50,0.85)",
+              whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+              {tasks.filter(t=>!t.concluida)[0]?.texto || tasks[0]?.texto}
             </span>
-          ))}
+          </div>
+          {/* chips */}
+          <div style={{display:"flex",flexWrap:"wrap",gap:3,overflow:"hidden"}}>
+            {tasks.map((t,i)=>(
+              <span key={i} style={{fontFamily:"monospace",
+                fontSize:"8px",padding:"1px 5px",
+                background:t.concluida?`rgba(34,197,94,0.12)`:`rgba(${rgb},0.08)`,
+                color:t.concluida?"#16a34a":accent,
+                border:`1px solid ${t.concluida?"rgba(34,197,94,0.35)":`rgba(${rgb},0.3)`}`,
+                textDecoration:t.concluida?"line-through":"none",
+                clipPath:"polygon(3px 0,100% 0,calc(100% - 3px) 100%,0 100%)",
+                fontWeight:600,letterSpacing:"0.03em",whiteSpace:"nowrap"}}>
+                {t.texto}
+              </span>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Progress bar */}
-      {tasks.length>0&&(
-        <div style={{height:2,background:`rgba(0,0,0,${dark?0.04:0.07})`,overflow:"hidden",zIndex:1}}>
+      {/* barra de progresso — sempre na base */}
+      {tasks.length>0&&pct>0&&(
+        <div style={{height:2,background:`rgba(0,0,0,0.1)`,overflow:"hidden",zIndex:1,marginTop:2,flexShrink:0}}>
           <div style={{height:"100%",width:`${pct}%`,
-            background:`linear-gradient(90deg,#c8102e,${accent})`,
-            boxShadow:`0 0 6px rgba(${rgb},0.5)`,transition:"width 0.5s"}}/>
+            background:`linear-gradient(90deg,#c8102e,${accent})`,transition:"width 0.5s"}}/>
         </div>
       )}
     </div>
