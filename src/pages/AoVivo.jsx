@@ -203,14 +203,15 @@ function BoardCell({m, D, forceCategory=null}){
 
   return(
     <div style={{
-      position:"relative",height:"100%",
-      display:"flex",flexDirection:"column",gap:6,
-      padding:"12px 14px 10px",
+      position:"relative",
+      display:"flex",flexDirection:"column",gap:5,
+      padding:"8px 10px 8px",
       background:cardBg,
       border:`1px solid ${borderCol}`,
       borderTop:`3px solid ${topBorder}`,
       boxShadow:cardShadow,
       overflow:"hidden",
+      minHeight:0,
       clipPath:"polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))",
     }}>
       {/* corner rivets */}
@@ -271,17 +272,17 @@ function BoardCell({m, D, forceCategory=null}){
         </div>
       </div>
 
-      {/* ROW 3: primeira tarefa pendente */}
+      {/* ROW 3: primeira tarefa pendente — só mostra se o card tiver espaço */}
       {tasks.length>0&&(
-        <div style={{display:"flex",alignItems:"center",gap:6,zIndex:1,
-          padding:"5px 8px",
+        <div style={{display:"flex",alignItems:"center",gap:6,zIndex:1,flexShrink:0,
+          padding:"4px 7px",
           background:dark?`rgba(${rgb},0.1)`:`rgba(${rgb},0.07)`,
           borderLeft:`2px solid rgba(${rgb},0.6)`}}>
           <span style={{fontFamily:"'JetBrains Mono',monospace",
-            fontSize:"clamp(7px,0.55vw,9px)",color:accent,
+            fontSize:"clamp(7px,0.5vw,9px)",color:accent,
             letterSpacing:"0.2em",flexShrink:0,fontWeight:700}}>TASK</span>
           <span style={{fontFamily:"'JetBrains Mono',monospace",
-            fontSize:"clamp(9px,0.72vw,11px)",
+            fontSize:"clamp(8px,0.62vw,10px)",
             color:dark?"rgba(210,210,210,0.85)":"rgba(20,20,50,0.85)",
             whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
             {tasks.filter(t=>!t.concluida)[0]?.texto || tasks[0]?.texto}
@@ -291,10 +292,10 @@ function BoardCell({m, D, forceCategory=null}){
 
       {/* ROW 4: chips de tarefas */}
       {tasks.length>0&&(
-        <div style={{display:"flex",flexWrap:"wrap",gap:4,zIndex:1,marginTop:"auto"}}>
+        <div style={{display:"flex",flexWrap:"wrap",gap:3,zIndex:1,marginTop:"auto",flexShrink:0}}>
           {tasks.map((t,i)=>(
             <span key={i} style={{fontFamily:"'JetBrains Mono',monospace",
-              fontSize:"clamp(8px,0.6vw,9px)",padding:"2px 8px",
+              fontSize:"clamp(7px,0.55vw,9px)",padding:"1px 6px",
               background:t.concluida
                 ?`rgba(34,197,94,${dark?0.12:0.1})`
                 :`rgba(${rgb},${dark?0.07:0.06})`,
@@ -334,41 +335,42 @@ function BigBoard({items, D, isRecon=false}){
   const running = items.filter(m=>m.timer_status==="running");
   const paused  = items.filter(m=>m.timer_status!=="running");
   const nRun = running.length, nPause = paused.length;
-  const total = items.length;
 
-  // Calcular colunas de forma a nunca cortar
-  const colsRun   = nRun===0?0:nRun<=2?nRun:nRun<=4?2:nRun<=6?3:4;
-  const colsPause = nPause===0?0:nPause<=2?nPause:nPause<=4?2:nPause<=6?3:nPause<=9?4:5;
+  // Colunas adaptativas por contagem
+  const cols = n => n<=1?1:n<=2?2:n<=4?2:n<=6?3:n<=9?4:5;
+  const colsRun   = cols(nRun);
+  const colsPause = cols(nPause);
 
-  // Estimar quantas linhas cada secção ocupa
-  const rowsRun   = nRun>0?Math.ceil(nRun/Math.max(colsRun,1)):0;
-  const rowsPause = nPause>0?Math.ceil(nPause/Math.max(colsPause,1)):0;
+  // Linhas de cada secção
+  const rowsRun   = nRun>0?Math.ceil(nRun/colsRun):0;
+  const rowsPause = nPause>0?Math.ceil(nPause/colsPause):0;
 
-  // Altura disponível aproximada para o content area (viewport - topbar ~88px - kpi ~80px - progress ~3px - footer ~44px - slide header ~52px - padding ~44px)
-  const availH = "calc(100vh - 311px)";
-
-  // Rácio running vs paused para distribuir altura
-  // running gets mais espaço por linha
-  const runWeight  = rowsRun  * 1.4;
-  const pauseWeight= rowsPause* 1.0;
-  const totalW     = runWeight + pauseWeight || 1;
-  const runPct     = runWeight / totalW * 100;
-  const pausePct   = pauseWeight / totalW * 100;
-
-  // Altura mínima por card para running e paused
-  const runMinH   = nRun===0?0:Math.max(100, Math.min(160, Math.floor(320/rowsRun)));
-  const pauseMinH = nPause===0?0:Math.max(80,  Math.min(120, Math.floor(240/rowsPause)));
+  // Peso proporcional: running tem 1.5x mais peso por linha (destaque visual)
+  const wRun   = rowsRun   * 1.5;
+  const wPause = rowsPause * 1.0;
+  const wTotal = wRun + wPause || 1;
+  // grid-template-rows em fr — distribui todo o espaço disponível
+  const gridRows = [
+    nRun>0   ? `${(wRun/wTotal*100).toFixed(1)}fr`   : null,
+    nPause>0 ? `${(wPause/wTotal*100).toFixed(1)}fr` : null,
+  ].filter(Boolean).join(" ");
 
   return(
-    <div style={{display:"flex",flexDirection:"column",gap:8,flex:1,overflow:"hidden",height:"100%"}}>
-      {/* ── RUNNING — cards destacados ── */}
+    <div style={{
+      display:"grid",
+      gridTemplateRows: gridRows,
+      gap:8,
+      flex:1,
+      minHeight:0,
+      overflow:"hidden",
+    }}>
+      {/* ── RUNNING — mais altura, destaque ── */}
       {running.length>0&&(
         <div style={{
           display:"grid",
           gridTemplateColumns:`repeat(${colsRun},1fr)`,
-          gridAutoRows:`minmax(${runMinH}px, 1fr)`,
+          gridTemplateRows:`repeat(${rowsRun},1fr)`,
           gap:8,
-          flex: nPause>0 ? `${runPct} 0 0` : "1 0 0",
           minHeight:0,
           overflow:"hidden",
         }}>
@@ -377,14 +379,13 @@ function BigBoard({items, D, isRecon=false}){
           ))}
         </div>
       )}
-      {/* ── PAUSED/IDLE — cards compactos ── */}
+      {/* ── PAUSED/IDLE — menos altura ── */}
       {paused.length>0&&(
         <div style={{
           display:"grid",
           gridTemplateColumns:`repeat(${colsPause},1fr)`,
-          gridAutoRows:`minmax(${pauseMinH}px, 1fr)`,
+          gridTemplateRows:`repeat(${rowsPause},1fr)`,
           gap:6,
-          flex: nRun>0 ? `${pausePct} 0 0` : "1 0 0",
           minHeight:0,
           overflow:"hidden",
         }}>
