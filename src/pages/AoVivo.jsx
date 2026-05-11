@@ -70,16 +70,19 @@ function HudCorners({color, size=10, thickness=2, inset=-1, opacity=0.9}){
 }
 
 // Tag angular [ TEXTO ] — substitui pills com aspecto táctico
-function HudTag({color, label, dim=false}){
+function HudTag({color, label, dim=false, glow=false}){
   return(
     <span style={{
       fontFamily:"'Orbitron',monospace", fontSize:"clamp(8px,0.65vw,10px)",
       fontWeight:800, letterSpacing:"0.12em",
-      padding:"2px 7px",
-      color, background:`${color}${dim?"10":"1a"}`,
-      border:`1px solid ${color}${dim?"33":"55"}`,
-      clipPath:"polygon(4px 0, 100% 0, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0 100%, 0 4px)",
+      padding:"2px 9px",
+      color, background:`${color}${dim?"10":"22"}`,
+      border:`1px solid ${color}${dim?"33":"88"}`,
+      clipPath:"polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%)",
       whiteSpace:"nowrap",
+      boxShadow: glow ? `0 0 10px ${color}99, 0 0 20px ${color}44, inset 0 0 8px ${color}22` : `0 0 4px ${color}44`,
+      animation: glow ? "hudPulse 1.8s ease-in-out infinite" : "none",
+      textShadow: glow ? `0 0 8px ${color}` : "none",
     }}>{label}</span>
   );
 }
@@ -131,39 +134,61 @@ function BoardCell({m, D}){
   const pct    = tasks.length?Math.round(done/tasks.length*100):0;
   const barCol = run?D.green:D.yellow;
 
+  // STARK: accent dourado quando prio, verde quando running
+  const starkAccent = run ? D.green : prio ? D.yellow : D.blue;
+
   return(
     <div style={{
       position:"relative",
-      background:`linear-gradient(180deg, ${D.card} 0%, ${D.cardB} 100%)`,
-      border:`1px solid ${prio?D.yellow+"66":D.line}`,
+      background:`linear-gradient(135deg, rgba(200,16,46,0.14), transparent 40%), linear-gradient(180deg, ${D.card} 0%, ${D.cardB} 100%)`,
+      border:`1px solid ${prio ? D.yellow+"88" : run ? D.green+"66" : "rgba(255,181,71,0.18)"}`,
       borderTop:`3px solid ${barCol}`,
       padding:"12px 14px 10px",
       display:"flex",flexDirection:"column",gap:"7px",
       boxShadow: run
-        ? `0 0 0 1px ${D.green}33, 0 0 18px ${D.green}26`
-        : prio ? `0 0 0 1px ${D.yellow}22` : "none",
+        ? `0 0 0 1px ${D.green}44, 0 0 22px ${D.green}33, inset 0 0 20px ${D.green}08`
+        : prio
+        ? `0 0 0 1px ${D.yellow}55, 0 0 18px ${D.yellow}44, inset 0 0 16px rgba(255,181,71,0.06)`
+        : `0 0 12px rgba(200,16,46,0.12)`,
       overflow:"hidden",
-      clipPath:"polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
+      clipPath:"polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))",
     }}>
-      {/* scan sweep no card em curso */}
+      {/* rivets nos cantos — estilo armadura */}
+      {[{top:7,left:7},{top:7,right:7},{bottom:7,left:7},{bottom:7,right:7}].map((pos,i)=>(
+        <span key={i} style={{position:"absolute",...pos,width:5,height:5,borderRadius:"50%",
+          background:`radial-gradient(circle,#ffd166 30%,#b87617 70%)`,
+          boxShadow:`0 0 4px rgba(255,181,71,0.7)`,zIndex:3,pointerEvents:"none"}}/>
+      ))}
+      {/* inner trim dourado */}
+      <span style={{position:"absolute",top:3,left:3,right:3,bottom:3,pointerEvents:"none",
+        border:`1px solid rgba(255,181,71,0.08)`,
+        clipPath:"polygon(9px 0,calc(100% - 9px) 0,100% 9px,100% calc(100% - 9px),calc(100% - 9px) 100%,9px 100%,0 calc(100% - 9px),0 9px)"}}/>
+      {/* scan sweep dourado no card em curso */}
       {run && (
         <div style={{position:"absolute",inset:0,pointerEvents:"none",
-          background:`linear-gradient(110deg, transparent 40%, ${D.green}14 50%, transparent 60%)`,
+          background:`linear-gradient(110deg, transparent 35%, rgba(255,181,71,0.08) 50%, transparent 65%)`,
           backgroundSize:"200% 100%",
           animation:"hudScan 4.5s linear infinite",zIndex:0}}/>
       )}
-      <HudCorners color={prio?D.yellow:run?D.green:D.blue} size={9} thickness={1.5} inset={2} opacity={0.7}/>
+      {/* PRIO glow pulse */}
+      {prio && !run && (
+        <div style={{position:"absolute",inset:0,pointerEvents:"none",
+          background:`linear-gradient(135deg, rgba(245,158,11,0.07), transparent 60%)`,
+          animation:"hudPulse 2.5s ease-in-out infinite",zIndex:0}}/>
+      )}
+      <HudCorners color={starkAccent} size={9} thickness={1.5} inset={2} opacity={0.8}/>
 
-      {/* NS — protagonista */}
+      {/* NS — protagonista dourado */}
       <div style={{position:"relative",fontFamily:"'Orbitron',monospace",
         fontSize:"clamp(15px,1.25vw,20px)",fontWeight:900,
-        color:D.blue,letterSpacing:"0.07em",textShadow:`0 0 12px ${D.blue}66`,
+        color:"#ffd166",letterSpacing:"0.07em",
+        textShadow:`0 0 14px rgba(255,181,71,0.7), 0 0 28px rgba(255,181,71,0.3)`,
         whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",zIndex:1}}>
         {m.serie||"—"}
       </div>
       {/* Modelo */}
-      <div style={{position:"relative",fontFamily:"monospace",
-        fontSize:"clamp(10px,0.78vw,12px)",color:D.text,opacity:0.7,
+      <div style={{position:"relative",fontFamily:"'JetBrains Mono',monospace",
+        fontSize:"clamp(9px,0.75vw,11px)",color:"#c9a880",
         whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",marginTop:"-4px",zIndex:1}}>
         {m.modelo||"—"}
       </div>
@@ -171,7 +196,7 @@ function BoardCell({m, D}){
       {/* Badges */}
       {(prio||rLabel)&&(
         <div style={{position:"relative",display:"flex",gap:"4px",flexWrap:"wrap",zIndex:1}}>
-          {prio&&<HudTag color={D.yellow} label="◤ PRIO"/>}
+          {prio&&<HudTag color={D.yellow} label="⚑ PRIO" glow={true}/>}
           {rLabel&&<HudTag color={rColor} label={`◇ ${rLabel}`}/>}
         </div>
       )}
@@ -180,11 +205,11 @@ function BoardCell({m, D}){
       {tasks.length>0&&(
         <div style={{position:"relative",display:"flex",flexWrap:"wrap",gap:"3px",zIndex:1}}>
           {tasks.map((t,i)=>(
-            <span key={i} style={{fontFamily:"monospace",
-              fontSize:"clamp(9px,0.72vw,11px)",padding:"2px 7px",
-              background:t.concluida?`${D.green}1a`:`${D.blue}14`,
-              color:t.concluida?D.green:D.blue,
-              border:`1px solid ${t.concluida?D.green:D.blue}3a`,
+            <span key={i} style={{fontFamily:"'JetBrains Mono',monospace",
+              fontSize:"clamp(9px,0.72vw,10px)",padding:"2px 7px",
+              background:t.concluida?`${D.green}18`:`rgba(255,181,71,0.1)`,
+              color:t.concluida?D.green:"#c9a880",
+              border:`1px solid ${t.concluida?D.green+"44":"rgba(255,181,71,0.25)"}`,
               textDecoration:t.concluida?"line-through":"none",
               clipPath:"polygon(3px 0, 100% 0, 100% calc(100% - 3px), calc(100% - 3px) 100%, 0 100%, 0 3px)",
               fontWeight:600,letterSpacing:"0.02em"}}>
@@ -194,34 +219,36 @@ function BoardCell({m, D}){
         </div>
       )}
 
-      {/* Progress */}
+      {/* Progress — vermelho → dourado */}
       {tasks.length>0&&(
-        <div style={{position:"relative",zIndex:1,height:"3px",background:D.sub,overflow:"hidden"}}>
+        <div style={{position:"relative",zIndex:1,height:"3px",background:"rgba(255,255,255,0.05)",overflow:"hidden"}}>
           <div style={{height:"100%",width:`${pct}%`,
-            background:`linear-gradient(90deg,${D.pink},${D.blue},${D.cyan})`,
-            boxShadow:`0 0 8px ${D.blue}88`,
+            background:`linear-gradient(90deg,#c8102e,#ffb547,#ffd166)`,
+            boxShadow:`0 0 8px rgba(255,181,71,0.6)`,
             transition:"width 0.5s"}}/>
         </div>
       )}
 
-      {/* Timer — fundo */}
+      {/* Timer */}
       <div style={{position:"relative",zIndex:1,display:"flex",alignItems:"center",
-        justifyContent:"space-between",marginTop:"auto",paddingTop:"4px",
-        borderTop:`1px dashed ${D.line}`}}>
+        justifyContent:"space-between",marginTop:"auto",paddingTop:"6px",
+        borderTop:`1px solid rgba(255,181,71,0.15)`}}>
         <div style={{display:"flex",alignItems:"center",gap:"5px"}}>
-          <div style={{width:"6px",height:"6px",background:barCol,
-            boxShadow:`0 0 8px ${barCol}`,
-            clipPath:"polygon(50% 0, 100% 50%, 50% 100%, 0 50%)",
+          <div style={{width:"7px",height:"7px",background:barCol,
+            boxShadow:`0 0 10px ${barCol}, 0 0 20px ${barCol}55`,
+            borderRadius:"50%",
             animation:run?"blink 1.2s ease-in-out infinite":"none"}}/>
           <span style={{fontFamily:"'Orbitron',monospace",
             fontSize:"clamp(8px,0.65vw,10px)",fontWeight:700,
-            color:barCol,letterSpacing:"0.14em"}}>
-            {run?"EM CURSO":"PAUSADO"}
+            color:barCol,letterSpacing:"0.14em",
+            textShadow:run?`0 0 8px ${barCol}`:"none"}}>
+            {run?"● EM CURSO":"◌ PAUSADO"}
           </span>
         </div>
         <div style={{fontFamily:"'Orbitron',monospace",
           fontSize:"clamp(16px,1.4vw,22px)",fontWeight:900,
-          color:barCol,letterSpacing:"0.04em",textShadow:`0 0 10px ${barCol}66`}}>
+          color:barCol,letterSpacing:"0.04em",
+          textShadow:`0 0 14px ${barCol}88, 0 0 28px ${barCol}33`}}>
           {fmtHMS(elapsed)}
         </div>
       </div>
@@ -447,12 +474,13 @@ function RowItem({m, idx, D, accent, showTimer=true, showDate=false}){
       display:"grid",
       gridTemplateColumns:"38% 1fr auto",
       alignItems:"center",gap:0,
-      background:`linear-gradient(90deg, ${idx%2===0?D.card:D.cardB} 0%, ${D.card} 100%)`,
-      border:`1px solid ${prio?D.yellow+"55":D.line}`,
-      borderLeft:`4px solid ${barCol}`,
+      background:`linear-gradient(135deg, rgba(200,16,46,0.10), transparent 35%), linear-gradient(90deg, ${idx%2===0?D.card:D.cardB} 0%, ${D.card} 100%)`,
+      border:`1px solid ${prio?"rgba(255,181,71,0.4)":run?"rgba(255,181,71,0.18)":"rgba(255,181,71,0.1)"}`,
+      borderLeft:`4px solid ${prio?D.yellow:barCol}`,
+      boxShadow: prio ? `0 0 16px rgba(245,158,11,0.25), inset 0 0 14px rgba(245,158,11,0.05)` : run && !isCon ? `0 0 0 1px ${D.green}22, 0 0 12px ${D.green}1a` : "none",
       overflow:"hidden",
       minHeight:"60px",
-      boxShadow: run && !isCon ? `0 0 0 1px ${D.green}22, 0 0 12px ${D.green}1a` : "none",
+
       clipPath:"polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))",
     }}>
       {/* scan sweep nas linhas em curso */}
@@ -468,18 +496,19 @@ function RowItem({m, idx, D, accent, showTimer=true, showDate=false}){
         borderRight:`1px solid ${D.line}`,minWidth:0}}>
         <div style={{fontFamily:"'Orbitron',monospace",
           fontSize:"clamp(15px,1.3vw,20px)",fontWeight:900,
-          color:accent,letterSpacing:"0.08em",textShadow:`0 0 10px ${accent}55`,
+          color:"#ffd166",letterSpacing:"0.08em",
+          textShadow:`0 0 12px rgba(255,181,71,0.7), 0 0 24px rgba(255,181,71,0.3)`,
           whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
           {m.serie||"—"}
         </div>
-        <div style={{fontFamily:"monospace",
-          fontSize:"clamp(10px,0.78vw,12px)",color:D.text,opacity:0.65,marginTop:"3px",
+        <div style={{fontFamily:"'JetBrains Mono',monospace",
+          fontSize:"clamp(9px,0.75vw,11px)",color:"#c9a880",marginTop:"3px",
           whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
           {m.modelo}
         </div>
         {(prio||rLabel)&&(
           <div style={{display:"flex",gap:"4px",marginTop:"5px",flexWrap:"wrap"}}>
-            {prio&&<HudTag color={D.yellow} label="◤ PRIO"/>}
+            {prio&&<HudTag color={D.yellow} label="⚑ PRIO" glow={true}/>}
             {rLabel&&<HudTag color={rColor} label={`◇ ${rLabel}`}/>}
           </div>
         )}
@@ -611,8 +640,9 @@ function SlideHead({title,icon,color,pulse,count,D}){
 
       <span style={{fontFamily:"'Orbitron',monospace",
         fontSize:"clamp(18px,1.7vw,28px)",fontWeight:900,
-        letterSpacing:"0.18em",color,
-        textShadow:`0 0 14px ${color}77, 0 0 4px ${color}aa`,
+        letterSpacing:"0.18em",
+        color:"#ffd166",
+        textShadow:`0 0 14px rgba(255,181,71,0.6), 0 0 4px ${color}aa`,
         textTransform:"uppercase"}}>
         {title}
       </span>
@@ -1249,10 +1279,10 @@ export default function AoVivo(){
       </div>
 
       {/* PROGRESS BAR */}
-      <div style={{position:"relative",height:"3px",background:D.sub,flexShrink:0,overflow:"hidden"}}>
+      <div style={{position:"relative",height:"3px",background:"rgba(255,181,71,0.08)",flexShrink:0,overflow:"hidden"}}>
         <div style={{height:"100%",width:`${prog*100}%`,
-          background:`linear-gradient(90deg,${D.pink},${D.blue},${D.cyan})`,
-          boxShadow:`0 0 10px ${D.pink}88`,
+          background:`linear-gradient(90deg,#c8102e,#ff2240,#ffb547,#ffd166)`,
+          boxShadow:`0 0 10px rgba(255,34,64,0.7), 0 0 20px rgba(255,181,71,0.3)`,
           transition:"width 0.1s linear"}}/>
         {/* riscas tácticas */}
         <div style={{position:"absolute",inset:0,pointerEvents:"none",
