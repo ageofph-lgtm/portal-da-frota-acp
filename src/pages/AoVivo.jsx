@@ -931,45 +931,88 @@ function GanttChart({ machines, D }) {
           const width    = Math.max(1.5, rightC-leftC);
           if(rightC<=0||leftC>=100) return null;
           const fmtD = d=>d.toLocaleDateString("pt-PT",{day:"2-digit",month:"2-digit"});
+          // barra demasiado estreita para mostrar texto dentro (< ~8% = ~115px em 1440px)
+          const isThin = width < 8;
+          // label fica à direita da barra se barra termina antes de 60%, senão à esquerda
+          const labelRight = rightC < 62;
           return(
             <div key={b.m.id} style={{
-              position:"relative",height:"34px",flexShrink:0,zIndex:1,
+              position:"relative",height:"36px",flexShrink:0,zIndex:1,
             }}>
-              {/* Barra — posicionada dentro da row */}
+              {/* Barra */}
               <div title={`${b.m.serie} · ${b.m.modelo} · ${fmtD(b.pi)} → ${fmtD(b.pf)}`}
                 style={{
                   position:"absolute",
                   left:leftC+"%",width:width+"%",
-                  top:0,height:"100%",
+                  top:"50%",transform:"translateY(-50%)",
+                  height: isThin ? "100%" : "100%",
                   background:barBg(b),
                   border:barBorder(b),
                   boxShadow:barShadow(b),
-                  borderRadius:"5px",
+                  borderRadius:"4px",
                   display:"flex",alignItems:"center",
-                  padding:"0 8px",gap:6,
+                  padding: isThin ? "0" : "0 8px",
+                  gap:5,
                   overflow:"hidden",
-                  minWidth:"2px",
+                  minWidth:"4px",
                 }}>
-                {b.run&&<span style={{flexShrink:0,width:6,height:6,borderRadius:"50%",
+                {!isThin&&b.run&&<span style={{flexShrink:0,width:6,height:6,borderRadius:"50%",
                   background:"#22C55E",boxShadow:"0 0 8px #22C55E",
                   animation:"blink 1s ease-in-out infinite"}}/>}
-                <span style={{fontFamily:"'Orbitron',monospace",fontSize:"11px",fontWeight:900,
+                {!isThin&&<span style={{fontFamily:"'Orbitron',monospace",fontSize:"11px",fontWeight:900,
                   color:"#fff",letterSpacing:"0.06em",whiteSpace:"nowrap",flexShrink:0,
                   textShadow:"0 1px 5px rgba(0,0,0,0.9)"}}>
                   {b.m.serie||"—"}
-                </span>
-                {width>10&&<span style={{fontFamily:"monospace",fontSize:"8px",
+                </span>}
+                {!isThin&&width>12&&<span style={{fontFamily:"monospace",fontSize:"8px",
                   color:"rgba(255,255,255,0.55)",whiteSpace:"nowrap",overflow:"hidden",
                   textOverflow:"ellipsis",flexShrink:1,minWidth:0}}>
                   {b.m.modelo}
                 </span>}
-                {b.isPrio&&<span style={{flexShrink:0,fontSize:"8px",fontFamily:"monospace",
+                {!isThin&&b.isPrio&&<span style={{flexShrink:0,fontSize:"8px",fontFamily:"monospace",
                   background:"rgba(245,158,11,0.35)",color:"#F59E0B",
-                  padding:"1px 5px",borderRadius:"3px",fontWeight:700}}>⚑</span>}
-                {b.overrun&&<span style={{flexShrink:0,fontSize:"8px",fontFamily:"monospace",
+                  padding:"1px 4px",borderRadius:"3px",fontWeight:700}}>⚑</span>}
+                {!isThin&&b.overrun&&<span style={{flexShrink:0,fontSize:"8px",fontFamily:"monospace",
                   background:"rgba(239,68,68,0.3)",color:"#FCA5A5",
-                  padding:"1px 5px",borderRadius:"3px",fontWeight:700}}>ATRAS.</span>}
+                  padding:"1px 4px",borderRadius:"3px",fontWeight:700}}>ATRAS.</span>}
               </div>
+
+              {/* Label externo — aparece quando a barra é demasiado estreita */}
+              {isThin&&(
+                <div style={{
+                  position:"absolute",
+                  top:"50%",transform:"translateY(-50%)",
+                  // posiciona à direita ou esquerda da barra conforme espaço disponível
+                  ...(labelRight
+                    ? {left:`calc(${rightC}% + 5px)`}
+                    : {right:`calc(${100-leftC}% + 5px)`,textAlign:"right"}
+                  ),
+                  display:"flex",flexDirection:"column",gap:1,
+                  pointerEvents:"none",
+                  zIndex:10,
+                  maxWidth:"140px",
+                }}>
+                  <div style={{display:"flex",alignItems:"center",gap:4}}>
+                    {b.run&&<span style={{width:5,height:5,borderRadius:"50%",flexShrink:0,
+                      background:"#22C55E",boxShadow:"0 0 6px #22C55E",
+                      animation:"blink 1s ease-in-out infinite"}}/>}
+                    <span style={{fontFamily:"'Orbitron',monospace",fontSize:"10px",fontWeight:900,
+                      color:"#e8e8e8",letterSpacing:"0.05em",whiteSpace:"nowrap",
+                      textShadow:"0 0 8px rgba(0,0,0,0.9), 0 0 14px rgba(0,0,0,0.8)"}}>
+                      {b.m.serie||"—"}
+                    </span>
+                    {b.isPrio&&<span style={{fontSize:"8px",color:"#F59E0B",fontWeight:700}}>⚑</span>}
+                    {b.overrun&&<span style={{fontSize:"7px",fontFamily:"monospace",
+                      background:"rgba(239,68,68,0.3)",color:"#FCA5A5",
+                      padding:"1px 3px",borderRadius:"2px",fontWeight:700}}>ATRAS.</span>}
+                  </div>
+                  <span style={{fontFamily:"monospace",fontSize:"8px",
+                    color:"rgba(180,180,180,0.6)",whiteSpace:"nowrap",
+                    textShadow:"0 0 6px rgba(0,0,0,0.9)"}}>
+                    {fmtD(b.pi)}→{fmtD(b.pf)}
+                  </span>
+                </div>
+              )}
             </div>
           );
         })}
