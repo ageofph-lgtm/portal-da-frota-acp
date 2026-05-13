@@ -1158,16 +1158,99 @@ export default function AoVivo(){
         ]} D={D}/>
       </div>
     ),
-    concluidas:(
-      <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
-        <SlideHead title="CONCLUÍDAS — ESTA SEMANA" icon={<CheckCircle2 size={16}/>} color={D.green} D={D} count={conSemana.length}/>
-        {conSemana.length===0?<Empty label="Nenhuma conclusão esta semana ainda" D={D}/>:
-          <div style={{display:"flex",flexDirection:"column",gap:"4px"}}>
-            {[...conSemana].sort((a,b)=>new Date(b.dataConclusao||b.updated_date)-new Date(a.dataConclusao||a.updated_date))
-              .map((m,i)=><RowItem key={m.id} m={m} idx={i} D={D} forceCategory="concluida" showTimer={false} showDate/>)}
-          </div>}
-      </div>
-    ),
+    concluidas:(()=>{
+      const sorted=[...conSemana].sort((a,b)=>new Date(b.dataConclusao||b.updated_date)-new Date(a.dataConclusao||a.updated_date));
+      // colunas adaptativas: até 4 cols dependendo da quantidade
+      const n=sorted.length;
+      const cols=n<=4?2:n<=9?3:n<=16?4:5;
+      return(
+        <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden"}}>
+          <SlideHead title="CONCLUÍDAS — ESTA SEMANA" icon={<CheckCircle2 size={16}/>} color={D.green} D={D} count={n}/>
+          {n===0?<Empty label="Nenhuma conclusão esta semana ainda" D={D}/>:
+            <div style={{
+              display:"grid",
+              gridTemplateColumns:`repeat(${cols},1fr)`,
+              gridAutoRows:"1fr",
+              gap:6,
+              flex:1,
+              minHeight:0,
+              overflow:"hidden",
+            }}>
+              {sorted.map((m,i)=>{
+                const cat=CAT[getMachineCategory(m)]||CAT.concluida;
+                const accent=D.green;
+                const rgb="34,197,94";
+                const dt=m.dataConclusao||m.updated_date;
+                const dateStr=dt?new Date(dt).toLocaleDateString("pt-PT",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"—";
+                const recon=m.recondicao||{};
+                const rLabel=recon.prata?"PRATA":recon.bronze?"BRONZE":null;
+                return(
+                  <div key={m.id} style={{
+                    position:"relative",
+                    display:"flex",flexDirection:"column",justifyContent:"space-between",
+                    padding:"6px 8px 5px",
+                    background:D.dark
+                      ?`linear-gradient(135deg,rgba(34,197,94,0.12) 0%,rgba(8,4,6,0.97) 100%)`
+                      :`linear-gradient(135deg,rgba(34,197,94,0.1) 0%,rgba(255,255,255,0.97) 100%)`,
+                    border:`1px solid rgba(34,197,94,0.35)`,
+                    borderTop:`2px solid #22C55E`,
+                    boxShadow:D.dark?`0 0 14px rgba(34,197,94,0.18)`:`0 2px 8px rgba(34,197,94,0.12)`,
+                    overflow:"hidden",
+                    clipPath:"polygon(0 0,calc(100% - 7px) 0,100% 7px,100% 100%,7px 100%,0 calc(100% - 7px))",
+                  }}>
+                    {/* nº de ordem */}
+                    <div style={{position:"absolute",top:4,right:6,fontFamily:"'Orbitron',monospace",
+                      fontSize:"8px",fontWeight:700,color:`rgba(34,197,94,0.4)`,letterSpacing:"0.1em"}}>
+                      {String(i+1).padStart(2,"0")}
+                    </div>
+                    {/* ícone ✓ */}
+                    <div style={{position:"absolute",bottom:5,right:7,opacity:0.2}}>
+                      <CheckCircle2 size={22} color="#22C55E"/>
+                    </div>
+                    {/* topo: série */}
+                    <div>
+                      <div style={{fontFamily:"'Orbitron',monospace",
+                        fontSize:"clamp(10px,0.9vw,13px)",fontWeight:900,
+                        color:D.dark?"#e8e8e8":"#0d0e1a",letterSpacing:"0.05em",lineHeight:1.1,
+                        textShadow:D.dark?`0 0 8px rgba(34,197,94,0.4)`:"none",
+                        whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",
+                        paddingRight:"18px"}}>
+                        {m.serie||"—"}
+                      </div>
+                      <div style={{fontFamily:"monospace",fontSize:"9px",
+                        color:D.dark?"rgba(140,140,140,0.7)":"rgba(30,30,60,0.55)",
+                        marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+                        {m.modelo||"—"}
+                      </div>
+                    </div>
+                    {/* base: tags + data */}
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+                      gap:4,marginTop:4,flexWrap:"nowrap",overflow:"hidden"}}>
+                      <div style={{display:"flex",gap:3,overflow:"hidden"}}>
+                        {rLabel&&<span style={{fontFamily:"'Orbitron',monospace",fontSize:"7px",fontWeight:700,
+                          padding:"1px 4px",color:CAT.recon.accent,
+                          background:`rgba(155,92,246,0.15)`,border:`1px solid rgba(155,92,246,0.35)`,
+                          clipPath:"polygon(3px 0,100% 0,calc(100% - 3px) 100%,0 100%)",
+                          whiteSpace:"nowrap",flexShrink:0}}>{rLabel}</span>}
+                        {m.prioridade&&<span style={{fontFamily:"'Orbitron',monospace",fontSize:"7px",fontWeight:700,
+                          padding:"1px 4px",color:"#F59E0B",
+                          background:`rgba(245,158,11,0.15)`,border:`1px solid rgba(245,158,11,0.35)`,
+                          clipPath:"polygon(3px 0,100% 0,calc(100% - 3px) 100%,0 100%)",
+                          whiteSpace:"nowrap",flexShrink:0}}>⚑ PRIO</span>}
+                      </div>
+                      <div style={{fontFamily:"monospace",fontSize:"8px",fontWeight:700,
+                        color:"#22C55E",letterSpacing:"0.04em",flexShrink:0,whiteSpace:"nowrap"}}>
+                        {dateStr}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          }
+        </div>
+      );
+    })(),
   };
 
   // KPIs
