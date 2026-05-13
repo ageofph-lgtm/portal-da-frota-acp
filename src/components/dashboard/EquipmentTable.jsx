@@ -108,6 +108,7 @@ export default function EquipmentTable({ equipment }) {
               <th className="px-6 py-4">Equipamento</th>
               <th className="px-6 py-4">Nº Série</th>
               <th className="px-6 py-4">Ação / Obs.</th>
+              <th className="px-6 py-4">Tempo</th>
               <th className="px-6 py-4 w-20">Editar</th>
             </tr>
           </thead>
@@ -163,6 +164,15 @@ export default function EquipmentTable({ equipment }) {
                         />
                       ) : (
                         eq.action || <span style={{ color: 'var(--cyber-muted)', fontStyle: 'italic', opacity: 0.5 }}>—</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap font-mono-cyber text-xs">
+                      {eq.timer_accumulated_seconds > 0 ? (
+                        <span style={{ color: eq.status === "Pronta" ? "#22C55E" : "var(--cyber-muted)", letterSpacing: "0.08em" }}>
+                          {(() => { const s = eq.timer_accumulated_seconds; return `${String(Math.floor(s/3600)).padStart(2,"0")}:${String(Math.floor((s%3600)/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`; })()}
+                        </span>
+                      ) : (
+                        <span style={{ color: "var(--cyber-muted)", opacity: 0.4 }}>—</span>
                       )}
                     </td>
                     <td className="px-6 py-4">

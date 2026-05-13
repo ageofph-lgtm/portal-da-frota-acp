@@ -644,13 +644,23 @@ function RowItem({m, idx, D, forceCategory=null, showTimer=true, showDate=false}
           {new Date(m.previsao_inicio).toLocaleDateString("pt-PT",{day:"2-digit",month:"2-digit"})}
         </div>
       )}
-      {showTimer&&(
+      {/* timer: se concluída mostra acumulado estático; senão mostra live */}
+      {(isCon&&(m.timer_accumulated_seconds>0))?(
+        <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0}}>
+          <span style={{fontFamily:"monospace",fontSize:"9px",color:"rgba(34,197,94,0.6)"}}>⏱</span>
+          <div style={{fontFamily:"'Orbitron',monospace",fontSize:"clamp(11px,0.95vw,13px)",
+            fontWeight:900,color:"#22C55E",letterSpacing:"0.04em",
+            textShadow:`0 0 8px rgba(34,197,94,0.5)`}}>
+            {fmtHMS(m.timer_accumulated_seconds)}
+          </div>
+        </div>
+      ):showTimer?(
         <div style={{fontFamily:"'Orbitron',monospace",fontSize:"clamp(12px,1vw,14px)",
           fontWeight:900,color:timerCol,letterSpacing:"0.04em",flexShrink:0,
           textShadow:run?`0 0 10px rgba(34,197,94,0.6)`:`0 0 8px rgba(245,158,11,0.4)`}}>
           {fmtHMS(elapsed)}
         </div>
-      )}
+      ):null}
       {tasks.length>0&&(
         <div style={{position:"absolute",bottom:0,left:0,right:0,height:"2px",
           background:`rgba(0,0,0,${dark?0.03:0.06})`}}>
@@ -1268,9 +1278,20 @@ export default function AoVivo(){
                         {m.modelo||"—"}
                       </div>
                     </div>
+                    {/* timer final */}
+                    {(m.timer_accumulated_seconds>0)&&(
+                      <div style={{display:"flex",alignItems:"center",gap:4,marginTop:2}}>
+                        <span style={{fontFamily:"monospace",fontSize:"7px",color:"rgba(34,197,94,0.6)",letterSpacing:"0.1em"}}>⏱</span>
+                        <span style={{fontFamily:"'Orbitron',monospace",fontSize:"10px",fontWeight:700,
+                          color:"#22C55E",letterSpacing:"0.04em",
+                          textShadow:D.dark?"0 0 8px rgba(34,197,94,0.5)":"none"}}>
+                          {fmtHMS(m.timer_accumulated_seconds)}
+                        </span>
+                      </div>
+                    )}
                     {/* base: tags + data */}
                     <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
-                      gap:4,marginTop:4,flexWrap:"nowrap",overflow:"hidden"}}>
+                      gap:4,marginTop:"auto",flexWrap:"nowrap",overflow:"hidden"}}>
                       <div style={{display:"flex",gap:3,overflow:"hidden"}}>
                         {rLabel&&<span style={{fontFamily:"'Orbitron',monospace",fontSize:"7px",fontWeight:700,
                           padding:"1px 4px",color:CAT.recon.accent,
