@@ -1170,11 +1170,13 @@ export default function AoVivo(){
             <div style={{
               display:"grid",
               gridTemplateColumns:`repeat(${cols},1fr)`,
-              gridAutoRows:"1fr",
+              gridAutoRows:"minmax(72px, 1fr)",
               gap:6,
               flex:1,
               minHeight:0,
-              overflow:"hidden",
+              overflowY:"auto",
+              overflowX:"hidden",
+              paddingRight:2,
             }}>
               {sorted.map((m,i)=>{
                 const cat=CAT[getMachineCategory(m)]||CAT.concluida;
